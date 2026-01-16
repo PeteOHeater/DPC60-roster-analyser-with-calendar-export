@@ -29,7 +29,7 @@
             padding: 40px; 
             border-radius: 20px; 
             box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
-            max-width: 1400px; 
+            max-width: 1450px; 
             margin: auto; 
             border: 1px solid var(--glass-border);
         }
@@ -50,7 +50,6 @@
             font-family: 'SF Mono', monospace; font-size: 13px; box-sizing: border-box; background: rgba(255,255,255,0.5); resize: vertical;
         }
 
-        /* Restored Instruction Panel Styles */
         .instructions-panel {
             margin-top: 20px;
             padding: 15px;
@@ -142,7 +141,9 @@
 
     const formatTime = (m) => {
         const mins = Math.max(0, Math.round(m));
-        return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}`;
+        const h = Math.floor(mins / 60);
+        const mm = String(mins % 60).padStart(2, '0');
+        return `${h}:${mm}`;
     };
 
     const getMarginClass = (credit, d60) => {
@@ -182,13 +183,19 @@
             if (match) {
                 const currentDay = parseInt(match[1]);
                 if (previousDay !== null && currentDay < previousDay) cumulativeOffset++;
+                
                 const dutyMins = parseTime(match[5]);
                 const credMins = parseTime(match[6]);
+                
+                // Temporary row to calculate full date for display
+                const tempRow = { day: match[1], actualMonthOffset: cumulativeOffset };
+                const fullDateObj = getFullDate(tempRow);
+                const displayDate = fullDateObj ? fullDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : `${match[1]} ${match[2]}`;
 
                 state.rosterData.push({
                     index: state.rosterData.length,
                     day: match[1],
-                    dateStr: `${match[1]} ${match[2]}`,
+                    dateStr: displayDate, 
                     actualMonthOffset: cumulativeOffset,
                     origSOf: match[4],
                     origDuty: dutyMins,
@@ -214,7 +221,7 @@
         state.rosterData.forEach((row, i) => {
             const marginVal = Math.abs(row.credit - row.origD60);
             html += `<tr>
-                <td class="mono">${row.dateStr}</td>
+                <td class="mono" style="white-space: nowrap;">${row.dateStr}</td>
                 <td class="mono">${row.origSOf}</td>
                 <td class="mono" style="color:var(--text-secondary)">${formatTime(row.origDuty)}</td>
                 <td class="mono">${formatTime(row.credit)}</td>
@@ -242,12 +249,14 @@
         let newSOfMins = (parseInt(newVal.slice(0,2)) * 60) + parseInt(newVal.slice(2));
         
         // Correct Midnight Wrap Logic
+        // If typing a time that is numerically less than the original (e.g. 1130 vs 1930), 
+        // it means we arrived the next day.
         if (newSOfMins < origSOfMins) {
             newSOfMins += 1440; 
         }
 
         const delta = newSOfMins - origSOfMins;
-        const newTotalDuty = row.origDuty + delta; // This adds the extension to original duty
+        const newTotalDuty = row.origDuty + delta; 
         const newD60 = newTotalDuty * 0.6;
         
         const baselinePay = Math.max(row.credit, row.origD60);
@@ -274,7 +283,7 @@
     }
 
     function getFullDate(row) {
-        if (!state.detectedMonth) return null;
+        if (!state.detectedMonth || !state.detectedYear) return null;
         let m = state.detectedMonth + row.actualMonthOffset;
         let y = state.detectedYear;
         while (m > 12) { m -= 12; y++; }
