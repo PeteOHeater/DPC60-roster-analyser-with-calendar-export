@@ -1,107 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPC 60 Roster Analyser (Auto-Detect)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --apple-bg: #f5f5f7;
+            --aviation-black: #1d1d1f;
+            --accent-red: #e21b22;
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --text-secondary: #86868b;
+        }
+
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            padding: 40px 20px; 
+            background: var(--apple-bg); 
+            color: var(--aviation-black);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .card { 
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
+            max-width: 1400px; 
+            margin: auto; 
+            border: 1px solid var(--glass-border);
+        }
+
+        h2 { 
+            color: #000; font-weight: 700; letter-spacing: -0.5px;
+            text-align: center; margin-bottom: 30px;
+        }
+
+        .controls { 
+            display: flex; gap: 30px; justify-content: center; margin-bottom: 30px;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        label { 
+            font-size: 11px; text-transform: uppercase; font-weight: 600; 
+            color: var(--text-secondary); letter-spacing: 0.5px;
+        }
+
+        input { 
+            padding: 10px 14px; border: 1px solid #d2d2d7; 
+            border-radius: 8px; font-size: 14px;
+        }
+
+        textarea { 
+            width: 100%; height: 150px; padding: 15px; 
+            border: 1px solid #d2d2d7; border-radius: 12px; 
+            font-family: 'SF Mono', monospace; font-size: 12px;
+            box-sizing: border-box; background: rgba(255,255,255,0.5);
+            resize: vertical;
+        }
+
+        .button-container { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        
+        button { 
+            background: var(--aviation-black); color: white; border: none; 
+            padding: 14px 28px; border-radius: 10px; cursor: pointer; 
+            font-weight: 600; transition: all 0.2s ease;
+        }
+
+        .btn-secondary { background: var(--accent-red); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 40px; }
+        th { 
+            color: var(--text-secondary); text-transform: uppercase; 
+            font-size: 10px; padding: 12px; border-bottom: 1px solid #d2d2d7; 
+        }
+        td { padding: 12px; border-bottom: 1px solid #f2f2f2; font-size: 13px; }
+        
+        .mono { font-family: 'SF Mono', monospace; }
+        .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; } 
+        .margin-blue { background-color: #e3f2fd; color: #1565c0; border-radius: 4px; }  
+        .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; } 
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>DPC60 Roster Analyser</h2>
+    
+    <div class="controls">
+        <div class="input-group">
+            <label>Hourly Rate</label>
+            <input type="number" id="hourlyRate" value="353">
+        </div>
+        <div class="input-group">
+            <label>Tax Rate %</label>
+            <input type="number" id="taxRate" value="47">
+        </div>
+        <div class="input-group">
+            <label id="detectedLabel" style="color: #16a34a;">Status: Ready</label>
+        </div>
+    </div>
+
+    <textarea id="rosterInput" placeholder="Paste your entire roster here (Calendar + Pattern details from below)"></textarea>
+    
+    <div class="button-container">
+        <button onclick="processRoster()">Process Roster</button>
+        <button class="btn-secondary" onclick="exportToCalendar()">Bulk Export Alerts</button>
+    </div>
+
+    <div id="tableContainer"></div>
+</div>
+
+<script>
+let rosterData = [];
+const MONTH_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+function formatTime(m) {
+    const mins = Math.max(0, Math.round(m));
+    return Math.floor(mins / 60) + ":" + (mins % 60).toString().padStart(2, '0');
+}
+
+function parseTime(s) {
+    if (!s || !s.includes(':')) return 0;
+    const [h, m] = s.split(':').map(Number);
+    return (h * 60) + m;
+}
+
 function processRoster() {
     const text = document.getElementById('rosterInput').value;
     const lines = text.split('\n');
     rosterData = [];
+
+    // 1. SMART SCAN: Find Year and Month context from anywhere in the text
+    let detectedYear = new Date().getFullYear();
+    let detectedMonth = new Date().getMonth() + 1;
+
+    // Look for patterns like "FEB 2026" or "2026"
+    const yearMatch = text.match(/\b(202\d)\b/);
+    if (yearMatch) detectedYear = parseInt(yearMatch[1]);
+
+    // Look for Month names in the patterns section
+    for (let i = 0; i < MONTH_NAMES.length; i++) {
+        if (text.toUpperCase().includes(MONTH_NAMES[i])) {
+            // Note: We use the first month we find as the anchor
+            detectedMonth = i + 1;
+            break;
+        }
+    }
+
+    document.getElementById('detectedLabel').innerText = `Context Detected: ${MONTH_NAMES[detectedMonth-1]} ${detectedYear}`;
+
+    // 2. PARSE CALENDAR LINES
     const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
-    
-    let previousDay = 0;
-    let monthOffset = 0; // Track when we roll into next month
+    let lastDay = 0;
+    let currentMonth = detectedMonth;
+    let currentYear = detectedYear;
 
     lines.forEach((line, index) => {
         const match = line.match(lineRegex);
         if (match) {
-            console.log('Matched line:', line);
-            
-            const currentDay = parseInt(match[1]);
-            
-            // Detect month rollover: if day number decreases significantly, we've crossed into next month
-            if (previousDay > 0 && currentDay < previousDay && (previousDay - currentDay) > 7) {
-                monthOffset = 1;
-                console.log(`Month rollover detected at day ${currentDay} (previous was ${previousDay})`);
+            const dayNum = parseInt(match[1]);
+
+            // Rollover logic: If day drops (e.g., 31 to 01), we moved to next month
+            if (dayNum < lastDay) {
+                currentMonth++;
+                if (currentMonth > 12) {
+                    currentMonth = 1;
+                    currentYear++;
+                }
             }
-            
+            lastDay = dayNum;
+
             const dutyMins = parseTime(match[5]);
             const credMins = parseTime(match[6]);
             const d60 = dutyMins * 0.6;
-            
+
             rosterData.push({
-                id: index, 
-                day: match[1],
-                dayName: match[2],
-                date: `${match[1]} ${match[2]}`,
-                monthOffset: monthOffset, // Store which month this duty belongs to
-                sOn: match[3], 
+                id: index,
+                day: dayNum,
+                month: currentMonth,
+                year: currentYear,
+                dateStr: `${dayNum} ${MONTH_NAMES[currentMonth-1]}`,
                 origSOf: match[4],
-                origDuty: dutyMins, 
-                credit: credMins, 
+                origDuty: dutyMins,
+                credit: credMins,
                 origD60: d60
             });
-            
-            previousDay = currentDay;
         }
     });
-    
-    if (rosterData.length > 0) {
-        console.log('Processed roster data:', rosterData);
-    }
-    
+
     renderTable();
 }
 
-function parseDate(dateStr, monthOffset) {
-    const monthInput = document.getElementById('rosterMonth').value;
-    
-    if (!monthInput) {
-        console.error('Please select a roster month/year');
-        alert('Please select the Roster Month/Year at the top before exporting to calendar.');
-        return null;
-    }
-    
-    const [year, month] = monthInput.split('-').map(Number);
-    const day = parseInt(dateStr.split(' ')[0]);
-    
-    // Apply month offset for duties in the following month
-    let adjustedMonth = month - 1 + monthOffset; // month is 0-indexed in Date
-    let adjustedYear = year;
-    
-    // Handle year rollover (e.g., December roster going into January)
-    if (adjustedMonth > 11) {
-        adjustedMonth = 0;
-        adjustedYear++;
-    }
-    
-    const date = new Date(adjustedYear, adjustedMonth, day);
-    
-    console.log('Parsed date:', dateStr, 'with offset', monthOffset, '→', date.toDateString());
-    return date;
+function renderTable() {
+    let html = `<table><tr><th>Date</th><th>Roster S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th><th>Extra Gross</th><th>Export</th></tr>`;
+    rosterData.forEach(row => {
+        const marginVal = Math.abs(row.credit - row.origD60);
+        const mClass = marginVal < 30 ? "margin-amber" : "margin-green";
+        html += `<tr>
+            <td class="mono">${row.dateStr}</td>
+            <td class="mono">${row.origSOf}</td>
+            <td class="mono">${formatTime(row.origDuty)}</td>
+            <td class="mono">${formatTime(row.credit)}</td>
+            <td class="mono">${formatTime(row.origD60)}</td>
+            <td class="${mClass} mono">${formatTime(marginVal)}</td>
+            <td class="mono">$${((Math.max(0, row.origD60 - row.credit)/60) * 353).toFixed(2)}</td>
+            <td><button class="export-btn" onclick="exportSingle(${row.id})">📅</button></td>
+        </tr>`;
+    });
+    document.getElementById('tableContainer').innerHTML = html + "</table>";
 }
 
-function createCalendarEvent(row) {
+function createUrl(row) {
     const marginMins = Math.abs(row.credit - row.origD60);
-    const dutyDate = parseDate(row.date, row.monthOffset); // Pass the monthOffset
+    const date = new Date(row.year, row.month - 1, row.day);
+    const start = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const end = new Date(date.getTime() + 30*60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     
-    if (!dutyDate) {
-        return null;
-    }
-    
-    const title = `⚠️ DPC60 Alert: ${formatTime(marginMins)} margin`;
-    const description = `DUTY DATE: ${row.date}%0A` +
-                      `Scheduled Sign-Off: ${row.origSOf}%0A` +
-                      `Duty Time: ${formatTime(row.origDuty)}%0A` +
-                      `Credit Hours: ${formatTime(row.credit)}%0A` +
-                      `.6 Duty: ${formatTime(row.origD60)}%0A` +
-                      `MARGIN: ${formatTime(marginMins)}%0A%0A` +
-                      `⚠️ This duty has less than 30 minutes margin between credit hours and DPC60. ` +
-                      `Monitor for any delays or extensions that could trigger credit hour payment.`;
-    
-    const startDate = dutyDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const endDate = new Date(dutyDate.getTime() + 30*60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    
-    const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-                  `&text=${encodeURIComponent(title)}` +
-                  `&dates=${startDate}/${endDate}` +
-                  `&details=${description}` +
-                  `&location=DPC60%20Roster%20Analyser`;
-    
-    return calUrl;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=DPC60+Alert+${row.dateStr}&dates=${start}/${end}&details=Margin:+${formatTime(marginMins)}`;
 }
+
+function exportSingle(id) {
+    const row = rosterData.find(r => r.id === id);
+    window.open(createUrl(row), '_blank');
+}
+
+function exportToCalendar() {
+    rosterData.filter(r => Math.abs(r.credit - r.origD60) < 30).forEach(row => window.open(createUrl(row), '_blank'));
+}
+</script>
+</body>
+</html>
