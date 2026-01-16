@@ -1,322 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DPC 60 Roster Analyser</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --apple-bg: #f5f5f7;
-            --aviation-black: #1d1d1f;
-            --accent-red: #e21b22;
-            --glass-border: rgba(0, 0, 0, 0.08);
-            --text-secondary: #86868b;
-        }
-
-        body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            padding: 40px 20px; 
-            background: var(--apple-bg); 
-            color: var(--aviation-black);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .card { 
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            padding: 40px; 
-            border-radius: 20px; 
-            box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
-            max-width: 1400px; 
-            margin: auto; 
-            border: 1px solid var(--glass-border);
-        }
-
-        h2 { 
-            color: #000000; 
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-top: 0; 
-            margin-bottom: 30px;
-            font-size: 28px;
-            text-align: center;
-        }
-
-        .controls { 
-            display: flex; 
-            gap: 30px; 
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-
-        .input-group { display: flex; flex-direction: column; gap: 8px; }
-        
-        label { 
-            font-size: 11px; 
-            text-transform: uppercase; 
-            font-weight: 600; 
-            color: var(--text-secondary);
-            letter-spacing: 0.5px;
-        }
-
-        input[type="number"], input[type="text"] { 
-            padding: 10px 14px; 
-            border: 1px solid #d2d2d7; 
-            border-radius: 8px; 
-            font-size: 14px;
-            background: white;
-            transition: border 0.2s ease;
-        }
-
-        input:focus { outline: none; border-color: var(--aviation-black); }
-
-        textarea { 
-            width: 100%; 
-            height: 120px; 
-            padding: 15px; 
-            border: 1px solid #d2d2d7; 
-            border-radius: 12px; 
-            font-family: 'SF Mono', 'Courier New', monospace; 
-            font-size: 13px;
-            box-sizing: border-box;
-            background: rgba(255,255,255,0.5);
-            resize: vertical;
-            line-height: 1.5;
-        }
-
-        /* Instructions Style */
-        .instructions-panel {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 12px;
-            background: #fff;
-            border: 1px solid #e5e5e7;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .instruction-item {
-            font-size: 12px;
-            line-height: 1.5;
-            color: #424245;
-        }
-
-        .marker {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-            margin-right: 6px;
-        }
-
-        button { 
-            background: var(--aviation-black); 
-            color: white; 
-            border: none; 
-            padding: 14px 28px; 
-            border-radius: 10px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            font-size: 15px; 
-            margin-top: 20px;
-            transition: all 0.2s ease;
-            width: auto;
-            display: inline-block;
-            margin-left: 10px;
-            margin-right: 10px;
-        }
-
-        button:hover { background: #333; transform: translateY(-1px); }
-        
-        .button-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .btn-secondary {
-            background: var(--accent-red);
-        }
-        
-        .btn-secondary:hover {
-            background: #c91a20;
-        }
-
-        table { 
-            width: 100%; 
-            border-collapse: separate; 
-            border-spacing: 0;
-            margin-top: 40px; 
-        }
-
-        th { 
-            color: var(--text-secondary); 
-            text-transform: uppercase; 
-            font-size: 10px; 
-            font-weight: 700;
-            letter-spacing: 1px;
-            padding: 12px;
-            border-bottom: 1px solid #d2d2d7;
-            vertical-align: bottom;
-        }
-
-        td { 
-            padding: 16px 12px; 
-            border-bottom: 1px solid #f2f2f2;
-            font-size: 13px;
-            color: #1d1d1f;
-        }
-        
-        .export-btn {
-            background: var(--accent-red);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .export-btn:hover {
-            background: #c91a20;
-            transform: translateY(-1px);
-        }
-        
-        .export-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .mono { font-family: 'SF Mono', 'Roboto Mono', monospace; font-weight: 500; }
-        
-        .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; } 
-        .margin-blue { background-color: #e3f2fd; color: #1565c0; border-radius: 4px; }  
-        .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; } 
-        
-        .extra-gross { font-weight: 700; color: #000; } 
-        .extra-net { color: #16a34a; font-weight: 700; }   
-        
-        .adj-input { 
-            width: 70px; 
-            padding: 6px; 
-            border: 1.5px solid var(--accent-red) !important; 
-            border-radius: 6px; 
-            text-align: center;
-            font-family: monospace;
-            font-weight: bold;
-        }
-
-        .duty-col { color: var(--text-secondary); }
-    </style>
-</head>
-<body>
-
-<div class="card">
-    <h2>DPC60 Roster Analyser</h2>
-    
-    <div class="controls">
-        <div class="input-group">
-            <label>Hourly Rate</label>
-            <input type="number" id="hourlyRate" value="353" oninput="updateAll()">
-        </div>
-        <div class="input-group">
-            <label>Tax Rate %</label>
-            <input type="number" id="taxRate" value="47" oninput="updateAll()">
-        </div>
-        <div class="input-group">
-            <label>Roster Month/Year</label>
-            <input type="month" id="rosterMonth" value="">
-        </div>
-    </div>
-
-    <textarea id="rosterInput" placeholder="Use the send roster function in Webcis, then copy/paste the calendar portion of your roster in here"></textarea>
-
-    <div class="instructions-panel">
-        <div class="instruction-item">
-            <span class="marker" style="background: #e8f5e9; border: 1px solid #2e7d32;"></span>
-            <strong>Green:</strong> Pattern is built to DPC60 or a past pattern has been increased to DPC60.
-        </div>
-        <div class="instruction-item">
-            <span class="marker" style="background: #fff8e1; border: 1px solid #ef6c00;"></span>
-            <strong>Amber:</strong> Credit Hours will be paid unless the margin is extended (e.g., late sign-off due to disruption).
-        </div>
-    </div>
-    
-    <div class="button-container">
-        <button onclick="processRoster()">Process Roster</button>
-        <button class="btn-secondary" onclick="exportToCalendar()">Export Margin Alerts to Calendar</button>
-    </div>
-
-    <div id="tableContainer"></div>
-</div>
-
-<script>
-let rosterData = [];
-
-// Set default month to current month
-document.addEventListener('DOMContentLoaded', function() {
-    const now = new Date();
-    const monthString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-    document.getElementById('rosterMonth').value = monthString;
-});
-
-function parseTime(s) {
-    if (!s || !s.includes(':')) return 0;
-    const [h, m] = s.split(':').map(Number);
-    return (h * 60) + m;
-}
-
-function formatTime(m) {
-    const mins = Math.max(0, Math.round(m));
-    return Math.floor(mins / 60) + ":" + (mins % 60).toString().padStart(2, '0');
-}
-
-function getMarginClass(credit, d60) {
-    const diff = credit - d60;
-    if (Math.abs(diff) <= 0.5) return "margin-green";
-    if (credit < d60) return "margin-blue";
-    return "margin-amber";
-}
-
 function processRoster() {
     const text = document.getElementById('rosterInput').value;
     const lines = text.split('\n');
     rosterData = [];
     const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
+    
+    let previousDay = 0;
+    let monthOffset = 0; // Track when we roll into next month
 
     lines.forEach((line, index) => {
         const match = line.match(lineRegex);
         if (match) {
             console.log('Matched line:', line);
-            console.log('Date parts - Day:', match[1], 'DayName:', match[2]);
+            
+            const currentDay = parseInt(match[1]);
+            
+            // Detect month rollover: if day number decreases significantly, we've crossed into next month
+            if (previousDay > 0 && currentDay < previousDay && (previousDay - currentDay) > 7) {
+                monthOffset = 1;
+                console.log(`Month rollover detected at day ${currentDay} (previous was ${previousDay})`);
+            }
             
             const dutyMins = parseTime(match[5]);
             const credMins = parseTime(match[6]);
             const d60 = dutyMins * 0.6;
+            
             rosterData.push({
                 id: index, 
-                day: match[1],        // Just the day number
-                dayName: match[2],    // Day name (Sat, Sun, Mon, etc.)
-                date: `${match[1]} ${match[2]}`,  // Combined for display
+                day: match[1],
+                dayName: match[2],
+                date: `${match[1]} ${match[2]}`,
+                monthOffset: monthOffset, // Store which month this duty belongs to
                 sOn: match[3], 
                 origSOf: match[4],
                 origDuty: dutyMins, 
                 credit: credMins, 
                 origD60: d60
             });
+            
+            previousDay = currentDay;
         }
     });
     
-    // Try to infer the month/year from the current date or ask user
     if (rosterData.length > 0) {
         console.log('Processed roster data:', rosterData);
     }
@@ -324,86 +48,7 @@ function processRoster() {
     renderTable();
 }
 
-function renderTable() {
-    let html = `<table><tr>
-        <th>Date</th>
-        <th>Roster S-Off</th>
-        <th>Duty</th>
-        <th>Credit</th>
-        <th>.6 Duty</th>
-        <th>Margin Between .6 Duty and Credit Hour</th>
-        <th>New S-Off</th>
-        <th>New Duty</th>
-        <th>New .6</th>
-        <th>Extra Gross</th>
-        <th>Net After Tax</th>
-        <th>Export</th>
-    </tr>`;
-
-    rosterData.forEach(row => {
-        const mClass = getMarginClass(row.credit, row.origD60);
-        const marginVal = Math.abs(row.credit - row.origD60);
-        const isAlert = marginVal < 30;
-        html += `<tr>
-            <td class="mono">${row.date}</td>
-            <td class="mono">${row.origSOf}</td>
-            <td class="duty-col mono">${formatTime(row.origDuty)}</td>
-            <td class="mono">${formatTime(row.credit)}</td>
-            <td class="mono">${formatTime(row.origD60)}</td>
-            <td class="${mClass} mono">${formatTime(marginVal)}</td>
-            <td><input type="text" maxlength="4" class="adj-input" id="in-${row.id}" oninput="run(${row.id})" placeholder="HHMM"></td>
-            <td id="d100-${row.id}" class="mono">-</td>
-            <td id="d60-${row.id}" class="mono">-</td>
-            <td id="gr-${row.id}" class="extra-gross mono">$0.00</td>
-            <td id="net-${row.id}" class="extra-net mono">$0.00</td>
-            <td>
-                <button class="export-btn" onclick="exportSingleDay(${row.id})" ${!isAlert ? 'disabled' : ''}>
-                    ${isAlert ? '📅 Export' : 'No Alert'}
-                </button>
-            </td>
-        </tr>`;
-    });
-    document.getElementById('tableContainer').innerHTML = html + "</table>";
-}
-
-function run(id) {
-    const row = rosterData.find(r => r.id === id);
-    const val = document.getElementById(`in-${id}`).value;
-    const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-    const tax = (parseFloat(document.getElementById('taxRate').value) || 0) / 100;
-
-    if (val.length === 4) {
-        const origSOfMins = (parseInt(row.origSOf.substring(0,2)) * 60) + parseInt(row.origSOf.substring(2));
-        let newSOfMins = (parseInt(val.substring(0,2)) * 60) + parseInt(val.substring(2));
-        if (newSOfMins < origSOfMins - 600) newSOfMins += 1440; 
-        
-        const delta = newSOfMins - origSOfMins;
-        const newTotalDuty = row.origDuty + delta;
-        const newD60 = newTotalDuty * 0.6;
-        
-        const baselinePay = Math.max(row.credit, row.origD60);
-        const simulatedPay = Math.max(row.credit, newD60);
-        const diff = Math.max(0, simulatedPay - baselinePay);
-        
-        const gross = (diff / 60) * rate;
-        
-        const marginEl = document.getElementById(`in-${id}`).parentElement.parentElement.cells[5];
-        marginEl.className = `${getMarginClass(row.credit, newD60)} mono`;
-        marginEl.innerText = formatTime(Math.abs(row.credit - newD60));
-
-        document.getElementById(`d100-${id}`).innerText = formatTime(newTotalDuty);
-        document.getElementById(`d60-${id}`).innerText = formatTime(newD60);
-        document.getElementById(`gr-${id}`).innerText = "$" + gross.toFixed(2);
-        document.getElementById(`net-${id}`).innerText = "$" + (gross * (1 - tax)).toFixed(2);
-    }
-}
-
-function updateAll() { 
-    rosterData.forEach(r => run(r.id)); 
-}
-
-function parseDate(dateStr) {
-    // Get the month/year from the input field
+function parseDate(dateStr, monthOffset) {
     const monthInput = document.getElementById('rosterMonth').value;
     
     if (!monthInput) {
@@ -415,18 +60,28 @@ function parseDate(dateStr) {
     const [year, month] = monthInput.split('-').map(Number);
     const day = parseInt(dateStr.split(' ')[0]);
     
-    const date = new Date(year, month - 1, day); // month is 0-indexed in Date
+    // Apply month offset for duties in the following month
+    let adjustedMonth = month - 1 + monthOffset; // month is 0-indexed in Date
+    let adjustedYear = year;
     
-    console.log('Parsed date:', dateStr, '→', date.toDateString());
+    // Handle year rollover (e.g., December roster going into January)
+    if (adjustedMonth > 11) {
+        adjustedMonth = 0;
+        adjustedYear++;
+    }
+    
+    const date = new Date(adjustedYear, adjustedMonth, day);
+    
+    console.log('Parsed date:', dateStr, 'with offset', monthOffset, '→', date.toDateString());
     return date;
 }
 
 function createCalendarEvent(row) {
     const marginMins = Math.abs(row.credit - row.origD60);
-    const dutyDate = parseDate(row.date);
+    const dutyDate = parseDate(row.date, row.monthOffset); // Pass the monthOffset
     
     if (!dutyDate) {
-        return null; // parseDate will have shown an error already
+        return null;
     }
     
     const title = `⚠️ DPC60 Alert: ${formatTime(marginMins)} margin`;
@@ -450,75 +105,3 @@ function createCalendarEvent(row) {
     
     return calUrl;
 }
-
-function exportSingleDay(id) {
-    const row = rosterData.find(r => r.id === id);
-    if (!row) {
-        console.error('Row not found for id:', id);
-        alert('Error: Could not find duty data.');
-        return;
-    }
-    
-    const marginMins = Math.abs(row.credit - row.origD60);
-    console.log('Exporting duty:', row.date, 'Margin:', formatTime(marginMins));
-    
-    if (marginMins >= 30) {
-        alert('This duty has a margin of 30 minutes or more. No alert needed.');
-        return;
-    }
-    
-    try {
-        const calUrl = createCalendarEvent(row);
-        if (!calUrl) return; // Error already shown by createCalendarEvent
-        
-        console.log('Opening calendar URL:', calUrl);
-        const newWindow = window.open(calUrl, '_blank');
-        
-        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-            alert('Pop-up blocked! Please allow pop-ups for this site and try again.');
-        }
-    } catch (error) {
-        console.error('Error opening calendar:', error);
-        alert('Error opening calendar. Check console for details.');
-    }
-}
-
-function exportToCalendar() {
-    if (rosterData.length === 0) {
-        alert('Please process a roster first!');
-        return;
-    }
-    
-    const alertDuties = rosterData.filter(row => {
-        const marginMins = Math.abs(row.credit - row.origD60);
-        return marginMins < 30;
-    });
-    
-    if (alertDuties.length === 0) {
-        alert('No duties found with margin less than 30 minutes.');
-        return;
-    }
-    
-    console.log(`Exporting ${alertDuties.length} duties with margins < 30 minutes`);
-    
-    try {
-        alertDuties.forEach((row, index) => {
-            const calUrl = createCalendarEvent(row);
-            console.log(`Opening calendar ${index + 1}/${alertDuties.length}:`, row.date);
-            const newWindow = window.open(calUrl, '_blank');
-            
-            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                console.warn('Pop-up blocked for duty:', row.date);
-            }
-        });
-        
-        alert(`Opening ${alertDuties.length} calendar event(s). If you don't see new tabs, please allow pop-ups for this site.`);
-    } catch (error) {
-        console.error('Error during bulk export:', error);
-        alert('Error exporting to calendar. Check console for details.');
-    }
-}
-</script>
-
-</body>
-</html>
