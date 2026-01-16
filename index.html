@@ -12,7 +12,6 @@
             --accent-red: #e21b22;
             --glass-border: rgba(0, 0, 0, 0.08);
             --text-secondary: #86868b;
-            --google-blue: #4285F4;
         }
 
         body { 
@@ -29,7 +28,7 @@
             padding: 40px; 
             border-radius: 20px; 
             box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
-            max-width: 1450px; 
+            max-width: 1400px; 
             margin: auto; 
             border: 1px solid var(--glass-border);
         }
@@ -37,6 +36,8 @@
         h2 { 
             color: #000000; 
             font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-top: 0; 
             margin-bottom: 30px;
             font-size: 28px;
             text-align: center;
@@ -56,6 +57,7 @@
             text-transform: uppercase; 
             font-weight: 600; 
             color: var(--text-secondary);
+            letter-spacing: 0.5px;
         }
 
         input[type="number"], input[type="text"] { 
@@ -63,7 +65,11 @@
             border: 1px solid #d2d2d7; 
             border-radius: 8px; 
             font-size: 14px;
+            background: white;
+            transition: border 0.2s ease;
         }
+
+        input:focus { outline: none; border-color: var(--aviation-black); }
 
         textarea { 
             width: 100%; 
@@ -71,9 +77,38 @@
             padding: 15px; 
             border: 1px solid #d2d2d7; 
             border-radius: 12px; 
-            font-family: monospace; 
+            font-family: 'SF Mono', 'Courier New', monospace; 
+            font-size: 13px;
             box-sizing: border-box;
             background: rgba(255,255,255,0.5);
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        /* Instructions Style */
+        .instructions-panel {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e5e5e7;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .instruction-item {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #424245;
+        }
+
+        .marker {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 6px;
         }
 
         button { 
@@ -84,24 +119,37 @@
             border-radius: 10px; 
             cursor: pointer; 
             font-weight: 600; 
-            display: block;
-            margin: 20px auto;
+            font-size: 15px; 
+            margin-top: 20px;
+            transition: all 0.2s ease;
+            width: auto;
+            display: inline-block;
+            margin-left: 10px;
+            margin-right: 10px;
         }
 
-        .cal-btn {
-            background: var(--google-blue);
-            color: white;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            text-decoration: none;
-            display: inline-block;
-            font-weight: 600;
+        button:hover { background: #333; transform: translateY(-1px); }
+        
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn-secondary {
+            background: var(--accent-red);
+        }
+        
+        .btn-secondary:hover {
+            background: #c91a20;
         }
 
         table { 
             width: 100%; 
             border-collapse: separate; 
+            border-spacing: 0;
             margin-top: 40px; 
         }
 
@@ -109,24 +157,65 @@
             color: var(--text-secondary); 
             text-transform: uppercase; 
             font-size: 10px; 
+            font-weight: 700;
+            letter-spacing: 1px;
             padding: 12px;
             border-bottom: 1px solid #d2d2d7;
-            text-align: left;
+            vertical-align: bottom;
         }
 
         td { 
-            padding: 12px; 
+            padding: 16px 12px; 
             border-bottom: 1px solid #f2f2f2;
             font-size: 13px;
+            color: #1d1d1f;
+        }
+        
+        .export-btn {
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .export-btn:hover {
+            background: #c91a20;
+            transform: translateY(-1px);
+        }
+        
+        .export-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .mono { font-family: 'SF Mono', monospace; }
-        .margin-green { background-color: #e8f5e9; color: #2e7d32; } 
-        .margin-blue { background-color: #e3f2fd; color: #1565c0; }  
-        .margin-amber { background-color: #fff8e1; color: #ef6c00; } 
-        .extra-gross { font-weight: 700; } 
+        .mono { font-family: 'SF Mono', 'Roboto Mono', monospace; font-weight: 500; }
+        
+        .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; } 
+        .margin-blue { background-color: #e3f2fd; color: #1565c0; border-radius: 4px; }  
+        .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; } 
+        
+        .extra-gross { font-weight: 700; color: #000; } 
         .extra-net { color: #16a34a; font-weight: 700; }   
-        .adj-input { width: 60px; border: 1.5px solid var(--accent-red) !important; border-radius: 4px; text-align: center; }
+        
+        .adj-input { 
+            width: 70px; 
+            padding: 6px; 
+            border: 1.5px solid var(--accent-red) !important; 
+            border-radius: 6px; 
+            text-align: center;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .duty-col { color: var(--text-secondary); }
     </style>
 </head>
 <body>
@@ -145,8 +234,23 @@
         </div>
     </div>
 
-    <textarea id="rosterInput" placeholder="Paste roster here..."></textarea>
-    <button onclick="processRoster()">Process Roster</button>
+    <textarea id="rosterInput" placeholder="Use the send roster function in Webcis, then copy/paste the calendar portion of your roster in here"></textarea>
+
+    <div class="instructions-panel">
+        <div class="instruction-item">
+            <span class="marker" style="background: #e8f5e9; border: 1px solid #2e7d32;"></span>
+            <strong>Green:</strong> Pattern is built to DPC60 or a past pattern has been increased to DPC60.
+        </div>
+        <div class="instruction-item">
+            <span class="marker" style="background: #fff8e1; border: 1px solid #ef6c00;"></span>
+            <strong>Amber:</strong> Credit Hours will be paid unless the margin is extended (e.g., late sign-off due to disruption).
+        </div>
+    </div>
+    
+    <div class="button-container">
+        <button onclick="processRoster()">Process Roster</button>
+        <button class="btn-secondary" onclick="exportToCalendar()">Export Margin Alerts to Calendar</button>
+    </div>
 
     <div id="tableContainer"></div>
 </div>
@@ -165,14 +269,11 @@ function formatTime(m) {
     return Math.floor(mins / 60) + ":" + (mins % 60).toString().padStart(2, '0');
 }
 
-function getGoogleUrl(dateStr, sOn, sOff, marginText) {
-    const year = new Date().getFullYear();
-    const start = new Date(`${dateStr} ${year} ${sOn.substring(0,2)}:${sOn.substring(2)}`).toISOString().replace(/-|:|\.\d\d\d/g, "");
-    const end = new Date(`${dateStr} ${year} ${sOff.substring(0,2)}:${sOff.substring(2)}`).toISOString().replace(/-|:|\.\d\d\d/g, "");
-    
-    const title = encodeURIComponent(`Tight Margin: ${marginText}`);
-    const details = encodeURIComponent(`Margin is less than 30 mins: ${marginText}\nSign Off: ${sOff}`);
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+function getMarginClass(credit, d60) {
+    const diff = credit - d60;
+    if (Math.abs(diff) <= 0.5) return "margin-green";
+    if (credit < d60) return "margin-blue";
+    return "margin-amber";
 }
 
 function processRoster() {
@@ -186,9 +287,10 @@ function processRoster() {
         if (match) {
             const dutyMins = parseTime(match[4]);
             const credMins = parseTime(match[5]);
+            const d60 = dutyMins * 0.6;
             rosterData.push({
                 id: index, date: match[1], sOn: match[2], origSOf: match[3],
-                origDuty: dutyMins, credit: credMins, origD60: dutyMins * 0.6
+                origDuty: dutyMins, credit: credMins, origD60: d60
             });
         }
     });
@@ -197,25 +299,41 @@ function processRoster() {
 
 function renderTable() {
     let html = `<table><tr>
-        <th>Date</th><th>Roster S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th><th>New S-Off</th><th>Extra Gross</th><th>Net After Tax</th><th>Export</th>
+        <th>Date</th>
+        <th>Roster S-Off</th>
+        <th>Duty</th>
+        <th>Credit</th>
+        <th>.6 Duty</th>
+        <th>Margin Between .6 Duty and Credit Hour</th>
+        <th>New S-Off</th>
+        <th>New Duty</th>
+        <th>New .6</th>
+        <th>Extra Gross</th>
+        <th>Net After Tax</th>
+        <th>Export</th>
     </tr>`;
 
     rosterData.forEach(row => {
+        const mClass = getMarginClass(row.credit, row.origD60);
         const marginVal = Math.abs(row.credit - row.origD60);
-        const mClass = (marginVal <= 0.5) ? "margin-green" : (row.credit < row.origD60) ? "margin-blue" : "margin-amber";
-        const calHtml = (marginVal < 30) ? `<a href="${getGoogleUrl(row.date, row.sOn, row.origSOf, formatTime(marginVal))}" target="_blank" class="cal-btn">Add Alert</a>` : "";
-
+        const isAlert = marginVal < 30;
         html += `<tr>
             <td class="mono">${row.date}</td>
             <td class="mono">${row.origSOf}</td>
-            <td class="mono">${formatTime(row.origDuty)}</td>
+            <td class="duty-col mono">${formatTime(row.origDuty)}</td>
             <td class="mono">${formatTime(row.credit)}</td>
             <td class="mono">${formatTime(row.origD60)}</td>
-            <td id="marg-${row.id}" class="${mClass} mono">${formatTime(marginVal)}</td>
+            <td class="${mClass} mono">${formatTime(marginVal)}</td>
             <td><input type="text" maxlength="4" class="adj-input" id="in-${row.id}" oninput="run(${row.id})" placeholder="HHMM"></td>
+            <td id="d100-${row.id}" class="mono">-</td>
+            <td id="d60-${row.id}" class="mono">-</td>
             <td id="gr-${row.id}" class="extra-gross mono">$0.00</td>
             <td id="net-${row.id}" class="extra-net mono">$0.00</td>
-            <td id="cal-${row.id}">${calHtml}</td>
+            <td>
+                <button class="export-btn" onclick="exportSingleDay(${row.id})" ${!isAlert ? 'disabled' : ''}>
+                    ${isAlert ? '📅 Export' : 'No Alert'}
+                </button>
+            </td>
         </tr>`;
     });
     document.getElementById('tableContainer').innerHTML = html + "</table>";
@@ -232,20 +350,104 @@ function run(id) {
         let newSOfMins = (parseInt(val.substring(0,2)) * 60) + parseInt(val.substring(2));
         if (newSOfMins < origSOfMins - 600) newSOfMins += 1440; 
         
-        const newD60 = (row.origDuty + (newSOfMins - origSOfMins)) * 0.6;
-        const newMargin = Math.abs(row.credit - newD60);
-        const gross = (Math.max(0, Math.max(row.credit, newD60) - Math.max(row.credit, row.origD60)) / 60) * rate;
+        const delta = newSOfMins - origSOfMins;
+        const newTotalDuty = row.origDuty + delta;
+        const newD60 = newTotalDuty * 0.6;
+        
+        const baselinePay = Math.max(row.credit, row.origD60);
+        const simulatedPay = Math.max(row.credit, newD60);
+        const diff = Math.max(0, simulatedPay - baselinePay);
+        
+        const gross = (diff / 60) * rate;
+        
+        const marginEl = document.getElementById(`in-${id}`).parentElement.parentElement.cells[5];
+        marginEl.className = `${getMarginClass(row.credit, newD60)} mono`;
+        marginEl.innerText = formatTime(Math.abs(row.credit - newD60));
 
-        document.getElementById(`marg-${id}`).innerText = formatTime(newMargin);
+        document.getElementById(`d100-${id}`).innerText = formatTime(newTotalDuty);
+        document.getElementById(`d60-${id}`).innerText = formatTime(newD60);
         document.getElementById(`gr-${id}`).innerText = "$" + gross.toFixed(2);
         document.getElementById(`net-${id}`).innerText = "$" + (gross * (1 - tax)).toFixed(2);
-        
-        const calCell = document.getElementById(`cal-${id}`);
-        calCell.innerHTML = (newMargin < 30) ? `<a href="${getGoogleUrl(row.date, row.sOn, val, formatTime(newMargin))}" target="_blank" class="cal-btn">Add Alert</a>` : "";
     }
 }
 
-function updateAll() { rosterData.forEach(r => run(r.id)); }
+function updateAll() { 
+    rosterData.forEach(r => run(r.id)); 
+}
+
+function parseDate(dateStr) {
+    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const parts = dateStr.split(' ');
+    const day = parseInt(parts[0]);
+    const month = months[parts[1]];
+    const year = new Date().getFullYear();
+    return new Date(year, month, day);
+}
+
+function createCalendarEvent(row) {
+    const marginMins = Math.abs(row.credit - row.origD60);
+    const dutyDate = parseDate(row.date);
+    
+    const title = `⚠️ DPC60 Alert: ${formatTime(marginMins)} margin`;
+    const description = `DUTY DATE: ${row.date}%0A` +
+                      `Scheduled Sign-Off: ${row.origSOf}%0A` +
+                      `Duty Time: ${formatTime(row.origDuty)}%0A` +
+                      `Credit Hours: ${formatTime(row.credit)}%0A` +
+                      `.6 Duty: ${formatTime(row.origD60)}%0A` +
+                      `MARGIN: ${formatTime(marginMins)}%0A%0A` +
+                      `⚠️ This duty has less than 30 minutes margin between credit hours and DPC60. ` +
+                      `Monitor for any delays or extensions that could trigger credit hour payment.`;
+    
+    const startDate = dutyDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const endDate = new Date(dutyDate.getTime() + 30*60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    
+    const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+                  `&text=${encodeURIComponent(title)}` +
+                  `&dates=${startDate}/${endDate}` +
+                  `&details=${description}` +
+                  `&location=DPC60%20Roster%20Analyser`;
+    
+    return calUrl;
+}
+
+function exportSingleDay(id) {
+    const row = rosterData.find(r => r.id === id);
+    if (!row) return;
+    
+    const marginMins = Math.abs(row.credit - row.origD60);
+    if (marginMins >= 30) {
+        alert('This duty has a margin of 30 minutes or more. No alert needed.');
+        return;
+    }
+    
+    const calUrl = createCalendarEvent(row);
+    window.open(calUrl, '_blank');
+}
+
+function exportToCalendar() {
+    if (rosterData.length === 0) {
+        alert('Please process a roster first!');
+        return;
+    }
+    
+    const alertDuties = rosterData.filter(row => {
+        const marginMins = Math.abs(row.credit - row.origD60);
+        return marginMins < 30;
+    });
+    
+    if (alertDuties.length === 0) {
+        alert('No duties found with margin less than 30 minutes.');
+        return;
+    }
+    
+    alertDuties.forEach(row => {
+        const calUrl = createCalendarEvent(row);
+        window.open(calUrl, '_blank');
+    });
+    
+    alert(`Opening ${alertDuties.length} calendar event(s) for duties with less than 30 minutes margin.`);
+}
 </script>
+
 </body>
 </html>
