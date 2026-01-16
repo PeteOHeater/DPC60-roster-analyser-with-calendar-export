@@ -6,50 +6,49 @@
   <title>DPC 60 Roster Analyser</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --apple-bg: #f5f5f7;
-      --aviation-black: #1d1d1f;
-      --accent-red: #e21b22;
-      --glass-border: rgba(0, 0, 0, 0.08);
-      --text-secondary: #86868b;
-      --success-green: #16a34a;
+    :root{
+      --apple-bg:#f5f5f7;
+      --aviation-black:#1d1d1f;
+      --accent-red:#e21b22;
+      --glass-border:rgba(0,0,0,0.08);
+      --text-secondary:#86868b;
+      --success-green:#16a34a;
     }
+    body{font-family:'Inter',sans-serif;padding:40px 20px;background:var(--apple-bg);color:var(--aviation-black);-webkit-font-smoothing:antialiased;}
+    .card{background:rgba(255,255,255,0.8);backdrop-filter:blur(20px);padding:40px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1500px;margin:auto;border:1px solid var(--glass-border);}
+    h2{font-weight:700;text-align:center;margin-bottom:30px;font-size:28px;}
 
-    body { font-family: 'Inter', sans-serif; padding: 40px 20px; background: var(--apple-bg); color: var(--aviation-black); -webkit-font-smoothing: antialiased; }
-    .card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); padding: 40px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); max-width: 1500px; margin: auto; border: 1px solid var(--glass-border); }
-    h2 { font-weight: 700; text-align: center; margin-bottom: 30px; font-size: 28px; }
+    .controls{display:flex;gap:20px;justify-content:center;margin-bottom:30px;flex-wrap:wrap;}
+    .input-group{display:flex;flex-direction:column;gap:8px;}
+    label{font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-secondary);}
+    input[type="number"],input[type="text"]{padding:10px 14px;border:1px solid #d2d2d7;border-radius:8px;font-size:14px;background:white;}
 
-    .controls { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
-    .input-group { display: flex; flex-direction: column; gap: 8px; }
-    label { font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); }
-    input[type="number"], input[type="text"] { padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: white; }
+    textarea{width:100%;height:120px;padding:15px;border:1px solid #d2d2d7;border-radius:12px;font-family:monospace;font-size:13px;box-sizing:border-box;margin-bottom:14px;}
+    .hint{font-size:12px;color:var(--text-secondary);margin:0 0 18px 0;}
 
-    textarea { width: 100%; height: 120px; padding: 15px; border: 1px solid #d2d2d7; border-radius: 12px; font-family: monospace; font-size: 13px; box-sizing: border-box; margin-bottom: 20px; }
+    .instructions-panel{margin:20px 0;padding:15px;border-radius:12px;background:#fff;border:1px solid #e5e5e7;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .instruction-item{font-size:12px;color:#424245;}
+    .marker{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;}
 
-    .instructions-panel { margin: 20px 0; padding: 15px; border-radius: 12px; background: #fff; border: 1px solid #e5e5e7; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .instruction-item { font-size: 12px; color: #424245; }
-    .marker { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; }
+    .button-container{display:flex;justify-content:center;gap:12px;margin-bottom:30px;flex-wrap:wrap;}
+    button{background:var(--aviation-black);color:white;border:none;padding:12px 24px;border-radius:10px;cursor:pointer;font-weight:600;transition:all .2s ease;}
+    button:hover{opacity:.9;transform:translateY(-1px);}
+    .btn-secondary{background:var(--accent-red);}
+    .btn-outline{background:transparent;color:var(--aviation-black);border:1px solid var(--aviation-black);}
 
-    .button-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
-    button { background: var(--aviation-black); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
-    button:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-secondary { background: var(--accent-red); }
-    .btn-outline { background: transparent; color: var(--aviation-black); border: 1px solid var(--aviation-black); }
+    table{width:100%;border-collapse:separate;border-spacing:0;margin-top:20px;}
+    th{color:var(--text-secondary);text-transform:uppercase;font-size:10px;padding:12px;border-bottom:1px solid #d2d2d7;text-align:left;}
+    td{padding:14px 12px;border-bottom:1px solid #f2f2f2;font-size:13px;}
 
-    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
-    th { color: var(--text-secondary); text-transform: uppercase; font-size: 10px; padding: 12px; border-bottom: 1px solid #d2d2d7; text-align: left; }
-    td { padding: 14px 12px; border-bottom: 1px solid #f2f2f2; font-size: 13px; }
+    .margin-green{background-color:#e8f5e9;color:#2e7d32;border-radius:4px;font-weight:600;padding:2px 6px;}
+    .margin-blue{background-color:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 6px;}
+    .margin-amber{background-color:#fff8e1;color:#ef6c00;border-radius:4px;padding:2px 6px;}
 
-    .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; font-weight: 600; padding: 2px 6px; }
-    .margin-blue { background-color: #e3f2fd; color: #1565c0; border-radius: 4px; padding: 2px 6px; }
-    .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; padding: 2px 6px; }
-
-    .extra-net { color: var(--success-green); font-weight: 700; }
-    .adj-input { width: 78px; padding: 6px; border: 2px solid var(--accent-red); border-radius: 6px; text-align: center; font-weight: bold; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .export-btn { background: #3a3a3c; font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; }
-
-    .hint { font-size: 12px; color: var(--text-secondary); margin-top: -10px; margin-bottom: 18px; }
+    .extra-net{color:var(--success-green);font-weight:700;}
+    .adj-input{width:78px;padding:6px;border:2px solid var(--accent-red);border-radius:6px;text-align:center;font-weight:bold;}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .export-btn{background:#3a3a3c;font-size:11px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;border-radius:10px;}
+    .notice{padding:12px;color:var(--text-secondary);background:#fff;border:1px solid #e5e5e7;border-radius:12px;margin-top:10px;}
   </style>
 </head>
 
@@ -77,12 +76,12 @@
 
     <div class="instructions-panel">
       <div class="instruction-item">
-        <span class="marker" style="background:#e8f5e9; border:1px solid #2e7d32;"></span>
+        <span class="marker" style="background:#e8f5e9;border:1px solid #2e7d32;"></span>
         <strong>Green:</strong> Built to DPC60 or increased to DPC60.
       </div>
       <div class="instruction-item">
-        <span class="marker" style="background:#fff8e1; border:1px solid #ef6c00;"></span>
-        <strong>Amber:</strong> Credit Hours paid unless margin is extended.
+        <span class="marker" style="background:#fff8e1;border:1px solid #ef6c00;"></span>
+        <strong>Amber:</strong> Credit hours paid unless margin is extended.
       </div>
     </div>
 
@@ -99,8 +98,9 @@
 <script>
   let state = { rosterData: [], detectedMonth: "", detectedYear: "" };
 
+  // --- Time helpers ---
   const parseTimeHM = (s) => {
-    // expects H:MM or HH:MM
+    // "H:MM" or "HH:MM"
     if (!s || !s.includes(':')) return 0;
     const [h, m] = s.split(':').map(Number);
     if (!Number.isFinite(h) || !Number.isFinite(m)) return 0;
@@ -108,7 +108,7 @@
   };
 
   const parseHHMM = (s) => {
-    // expects exactly 4 digits HHMM
+    // exactly 4 digits
     if (!/^\d{4}$/.test(s)) return null;
     const hh = parseInt(s.slice(0,2), 10);
     const mm = parseInt(s.slice(2), 10);
@@ -126,6 +126,7 @@
     return credit > d60 ? 'margin-amber' : 'margin-blue';
   };
 
+  // --- UI actions ---
   function clearRoster() {
     document.getElementById('rosterInput').value = '';
     document.getElementById('tableContainer').innerHTML = '';
@@ -135,53 +136,82 @@
     state.detectedYear = "";
   }
 
-  function processRoster() {
-    const text = document.getElementById('rosterInput').value || "";
-    const lines = text.split('\n');
-    state.rosterData = [];
+  function detectMonthYearAndBidPeriod(lines) {
     state.detectedMonth = "";
     state.detectedYear = "";
 
-    // Find Month/Year + Bid Period (if present)
+    const monthMap = {
+      jan: "January", feb: "February", mar: "March", apr: "April",
+      may: "May", jun: "June", jul: "July", aug: "August",
+      sep: "September", oct: "October", nov: "November", dec: "December"
+    };
+
+    let bp = "";
+
     lines.forEach(line => {
-      const dateMatch = line.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+      // Full month: "January 2026"
+      let m = line.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/i);
+      if (m) {
+        state.detectedMonth = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+        state.detectedYear = m[2];
+      }
+
+      // Abbrev month: "Jan 2026"
+      if (!state.detectedMonth || !state.detectedYear) {
+        m = line.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b\.?\s+(\d{4})\b/i);
+        if (m) {
+          state.detectedMonth = monthMap[m[1].toLowerCase()];
+          state.detectedYear = m[2];
+        }
+      }
+
       const bpMatch = line.match(/Bid Period\s+(\d+)/i);
-      if (dateMatch) {
-        state.detectedMonth = dateMatch[1];
-        state.detectedYear = dateMatch[2];
-      }
-      if (bpMatch) {
-        const mmYY = (state.detectedMonth && state.detectedYear) ? ` - ${state.detectedMonth} ${state.detectedYear}` : "";
-        document.getElementById('bidPeriod').value = `BP ${bpMatch[1]}${mmYY}`;
-      }
+      if (bpMatch) bp = bpMatch[1];
     });
 
-    // Parse row data:
-    // Groups: DD DDD .... SOff(4digits) .... Duty(H:MM) Credit(H:MM)
-    // NOTE: this depends on your WebCis line layout; adjust if needed.
+    if (bp) {
+      const mmYY = (state.detectedMonth && state.detectedYear) ? ` - ${state.detectedMonth} ${state.detectedYear}` : "";
+      document.getElementById('bidPeriod').value = `BP ${bp}${mmYY}`;
+    } else if (state.detectedMonth && state.detectedYear) {
+      document.getElementById('bidPeriod').value = `${state.detectedMonth} ${state.detectedYear}`;
+    } else {
+      document.getElementById('bidPeriod').value = "";
+    }
+  }
+
+  function processRoster() {
+    const text = document.getElementById('rosterInput').value || "";
+    const lines = text.split('\n');
+
+    state.rosterData = [];
+    detectMonthYearAndBidPeriod(lines);
+
+    // Expected duty line format based on your original regex:
+    // DD DDD ... 4digits 4digits H:MM H:MM
     const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
 
     lines.forEach(line => {
       const match = line.match(lineRegex);
       if (!match) return;
 
+      const day = match[1];
+      const dow = match[2];
+      const origSOff = match[4];          // HHMM (from roster line)
       const dutyMins = parseTimeHM(match[5]);
       const credMins = parseTimeHM(match[6]);
 
-      const day = match[1];
-      const dow = match[2];
+      // Force month display: if month/year not found, show placeholders
+      const monthShown = state.detectedMonth || "Month?";
+      const yearShown  = state.detectedYear || "Year?";
 
-      // Month shown with date on left column
-      const prettyDate = (state.detectedMonth && state.detectedYear)
-        ? `${day} ${state.detectedMonth} ${state.detectedYear} (${dow})`
-        : `${day} (${dow})`;
+      const prettyDate = `${day} ${monthShown} ${yearShown} (${dow})`;
 
       state.rosterData.push({
         prettyDate,
-        origSOff: match[4],          // HHMM
-        origDuty: dutyMins,          // minutes
-        credit: credMins,            // minutes
-        origD60: dutyMins * 0.6      // minutes
+        origSOff,
+        origDuty: dutyMins,
+        credit: credMins,
+        origD60: dutyMins * 0.6
       });
     });
 
@@ -191,7 +221,7 @@
   function renderTable() {
     if (!state.rosterData.length) {
       document.getElementById('tableContainer').innerHTML =
-        `<div style="padding:12px; color:var(--text-secondary);">No duty rows detected. Paste the full WebCis roster text and try again.</div>`;
+        `<div class="notice">No duty rows detected. If you paste one sample duty line here, the parser regex can be tuned.</div>`;
       return;
     }
 
@@ -211,8 +241,10 @@
         <td class="mono">${formatTime(row.origD60)}</td>
         <td class="mono ${getMarginClass(row.credit, row.origD60)}" id="marginCell-${i}">${formatTime(margin)}</td>
 
-        <td><input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM"
-              oninput="calculateAdjustment(${i}, this.value)"></td>
+        <td>
+          <input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM"
+                 oninput="calculateAdjustment(${i}, this.value)">
+        </td>
 
         <td id="newDuty-${i}" class="mono">-</td>
         <td id="newD60-${i}" class="mono">-</td>
@@ -226,18 +258,16 @@
   }
 
   function calculateAdjustment(index, newValRaw) {
-    // Keep digits only (helps on mobile copy/paste)
+    // Sanitize to digits only
     const newVal = (newValRaw || "").replace(/\D/g, "").slice(0, 4);
 
-    // Write back sanitized value so the UI matches what is being calculated
+    // Ensure UI shows sanitized input
     const inputs = document.querySelectorAll('.adj-input');
     if (inputs[index] && inputs[index].value !== newVal) inputs[index].value = newVal;
 
-    // Only calculate when we have 4 digits
     if (newVal.length !== 4) return;
 
     const row = state.rosterData[index];
-
     const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
     const taxMult = 1 - ((parseFloat(document.getElementById('taxRate').value) || 0) / 100);
 
@@ -252,10 +282,10 @@
     const finalDuty = row.origDuty + delta;
     const finalD60 = finalDuty * 0.6;
 
-    // YOUR RULE:
-    // - new .6 duty must be higher than old .6 duty (implicit by using max with old)
-    // - and must be higher than credit to pay
-    // Therefore pay only for minutes above BOTH old .6 and credit:
+    // PAY RULE (as requested):
+    // - new .6 duty increases old .6 duty
+    // - BUT only pay when the new .6 duty is also > credit
+    // => pay for minutes above BOTH old .6 and credit:
     const payFromMins = Math.max(row.origD60, row.credit);
     const diffMins = Math.max(0, finalD60 - payFromMins);
 
