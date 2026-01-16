@@ -34,86 +34,49 @@
             border: 1px solid var(--glass-border);
         }
 
-        h2 { 
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin: 0 0 30px 0;
-            font-size: 28px;
-            text-align: center;
-        }
+        h2 { font-weight: 700; letter-spacing: -0.5px; margin: 0 0 30px 0; font-size: 28px; text-align: center; }
 
-        .controls { 
-            display: flex; 
-            gap: 20px; 
-            justify-content: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
+        .controls { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
         .input-group { display: flex; flex-direction: column; gap: 8px; }
 
-        label { 
-            font-size: 11px; 
-            text-transform: uppercase; 
-            font-weight: 600; 
-            color: var(--text-secondary);
-            letter-spacing: 0.5px;
-        }
+        label { font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.5px; }
 
         input[type="number"], input[type="text"] { 
-            padding: 10px 14px; 
-            border: 1px solid #d2d2d7; 
-            border-radius: 8px; 
-            font-size: 14px;
-            background: white;
-            transition: border 0.2s ease;
+            padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: white; 
         }
 
         textarea { 
-            width: 100%; 
-            height: 120px; 
-            padding: 15px; 
-            border: 1px solid #d2d2d7; 
-            border-radius: 12px; 
-            font-family: 'SF Mono', monospace; 
-            font-size: 13px;
-            box-sizing: border-box;
-            background: rgba(255,255,255,0.5);
-            resize: vertical;
+            width: 100%; height: 120px; padding: 15px; border: 1px solid #d2d2d7; border-radius: 12px; 
+            font-family: 'SF Mono', monospace; font-size: 13px; box-sizing: border-box; background: rgba(255,255,255,0.5); resize: vertical;
         }
 
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
+        /* Restored Instruction Panel Styles */
+        .instructions-panel {
             margin-top: 20px;
-            flex-wrap: wrap;
+            padding: 15px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e5e5e7;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
+        .instruction-item { font-size: 12px; line-height: 1.5; color: #424245; }
+        .marker { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; }
+
+        .button-container { display: flex; justify-content: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
 
         button { 
-            background: var(--aviation-black); 
-            color: white; 
-            border: none; 
-            padding: 12px 24px; 
-            border-radius: 10px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            transition: all 0.2s ease;
+            background: var(--aviation-black); color: white; border: none; padding: 12px 24px; 
+            border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;
         }
 
         button:hover { opacity: 0.9; transform: translateY(-1px); }
-
         .btn-secondary { background: var(--accent-red); }
         .btn-outline { background: transparent; color: var(--aviation-black); border: 1px solid var(--aviation-black); }
 
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 30px; }
-        th { 
-            color: var(--text-secondary); 
-            text-transform: uppercase; 
-            font-size: 10px; 
-            padding: 12px; 
-            border-bottom: 1px solid #d2d2d7; 
-        }
+        th { color: var(--text-secondary); text-transform: uppercase; font-size: 10px; padding: 12px; border-bottom: 1px solid #d2d2d7; text-align: left; }
         td { padding: 14px 12px; border-bottom: 1px solid #f2f2f2; font-size: 13px; }
 
         .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; font-weight: 600; } 
@@ -121,7 +84,7 @@
         .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; } 
 
         .extra-net { color: var(--success-green); font-weight: 700; }
-        .adj-input { width: 65px; padding: 5px; border: 1px solid var(--accent-red); border-radius: 4px; text-align: center; }
+        .adj-input { width: 65px; padding: 5px; border: 2px solid var(--accent-red); border-radius: 4px; text-align: center; font-weight: bold; }
         .mono { font-family: 'SF Mono', monospace; }
     </style>
 </head>
@@ -145,7 +108,18 @@
         </div>
     </div>
 
-    <textarea id="rosterInput" placeholder="Paste WebCis roster data here..."></textarea>
+    <textarea id="rosterInput" placeholder="Use the send roster function in WebCis, then copy/paste all into here"></textarea>
+
+    <div class="instructions-panel">
+        <div class="instruction-item">
+            <span class="marker" style="background: #e8f5e9; border: 1px solid #2e7d32;"></span>
+            <strong>Green:</strong> Pattern is built to DPC60 or a past pattern has been increased to DPC60.
+        </div>
+        <div class="instruction-item">
+            <span class="marker" style="background: #fff8e1; border: 1px solid #ef6c00;"></span>
+            <strong>Amber:</strong> Credit Hours paid unless margin is extended (eg late sign off due disruption).
+        </div>
+    </div>
 
     <div class="button-container">
         <button onclick="processRoster()">Process Roster</button>
@@ -158,22 +132,8 @@
 </div>
 
 <script>
-    // State Management
-    const state = {
-        rosterData: [],
-        detectedMonth: null,
-        detectedYear: null,
-        bidPeriodInfo: ""
-    };
+    const state = { rosterData: [], detectedMonth: null, detectedYear: null, bidPeriodInfo: "" };
 
-    const monthAbbrMap = {
-        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
-        'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
-        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
-        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
-    };
-
-    // Utilities
     const parseTime = (s) => {
         if (!s || !s.includes(':')) return 0;
         const [h, m] = s.split(':').map(Number);
@@ -201,42 +161,35 @@
     function processRoster() {
         const text = document.getElementById('rosterInput').value;
         const lines = text.split('\n');
-        
         state.rosterData = [];
         let previousDay = null;
+        let cumulativeOffset = 0;
 
-        // 1. Detect Month/Year and Bid Period
         lines.forEach(line => {
             const bpMatch = line.match(/Bid Period\s+(\d+)/i);
             const dateMatch = line.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/i);
-            
             if (bpMatch) state.bidPeriodInfo = `BP ${bpMatch[1]}`;
             if (dateMatch) {
-                state.detectedMonth = monthAbbrMap[dateMatch[1].toLowerCase()];
+                const months = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+                state.detectedMonth = months.indexOf(dateMatch[1].toLowerCase()) + 1;
                 state.detectedYear = parseInt(dateMatch[2]);
             }
         });
 
-        // 2. Parse Rows
         const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
-        let cumulativeOffset = 0;
-
-        lines.forEach((line, idx) => {
+        lines.forEach(line => {
             const match = line.match(lineRegex);
             if (match) {
                 const currentDay = parseInt(match[1]);
                 if (previousDay !== null && currentDay < previousDay) cumulativeOffset++;
-
                 const dutyMins = parseTime(match[5]);
                 const credMins = parseTime(match[6]);
 
                 state.rosterData.push({
                     index: state.rosterData.length,
                     day: match[1],
-                    dayName: match[2],
                     dateStr: `${match[1]} ${match[2]}`,
                     actualMonthOffset: cumulativeOffset,
-                    sOn: match[3],
                     origSOf: match[4],
                     origDuty: dutyMins,
                     credit: credMins,
@@ -247,44 +200,34 @@
         });
 
         if (state.rosterData.length > 0) {
-            const start = state.rosterData[0].dateStr;
-            const end = state.rosterData[state.rosterData.length - 1].dateStr;
-            document.getElementById('bidPeriod').value = `${state.bidPeriodInfo}: ${start} - ${end}`;
+            document.getElementById('bidPeriod').value = `${state.bidPeriodInfo}: ${state.rosterData[0].dateStr} - ${state.rosterData[state.rosterData.length-1].dateStr}`;
             renderTable();
         }
     }
 
     function renderTable() {
-        let html = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th><th>Roster S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
-                        <th>New S-Off</th><th>New .6</th><th>Extra Gross</th><th>Net (Tax)</th><th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>`;
+        let html = `<table><thead><tr>
+            <th>Date</th><th>Roster S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
+            <th>New S-Off</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
+        </tr></thead><tbody>`;
 
         state.rosterData.forEach((row, i) => {
             const marginVal = Math.abs(row.credit - row.origD60);
-            const mClass = getMarginClass(row.credit, row.origD60);
-
-            html += `
-                <tr>
-                    <td class="mono">${row.dateStr}</td>
-                    <td class="mono">${row.origSOf}</td>
-                    <td class="mono" style="color:#86868b">${formatTime(row.origDuty)}</td>
-                    <td class="mono">${formatTime(row.credit)}</td>
-                    <td class="mono">${formatTime(row.origD60)}</td>
-                    <td class="mono ${mClass}">${formatTime(marginVal)}</td>
-                    <td><input type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
-                    <td id="newD60-${i}" class="mono">-</td>
-                    <td id="gross-${i}" class="mono" style="font-weight:700">$0.00</td>
-                    <td id="net-${i}" class="mono extra-net">$0.00</td>
-                    <td><button class="export-btn" style="padding:5px 10px; font-size:10px" onclick="exportSingleDay(${i})">📅 Export</button></td>
-                </tr>`;
+            html += `<tr>
+                <td class="mono">${row.dateStr}</td>
+                <td class="mono">${row.origSOf}</td>
+                <td class="mono" style="color:var(--text-secondary)">${formatTime(row.origDuty)}</td>
+                <td class="mono">${formatTime(row.credit)}</td>
+                <td class="mono">${formatTime(row.origD60)}</td>
+                <td class="mono ${getMarginClass(row.credit, row.origD60)}" id="marginCell-${i}">${formatTime(marginVal)}</td>
+                <td><input type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
+                <td id="newDuty-${i}" class="mono">-</td>
+                <td id="newD60-${i}" class="mono">-</td>
+                <td id="gross-${i}" class="mono" style="font-weight:700">$0.00</td>
+                <td id="net-${i}" class="mono extra-net">$0.00</td>
+                <td><button style="padding:5px 10px; font-size:10px" onclick="exportSingleDay(${i})">📅 Export</button></td>
+            </tr>`;
         });
-
         document.getElementById('tableContainer').innerHTML = html + `</tbody></table>`;
     }
 
@@ -295,29 +238,38 @@
         const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
         const taxMult = 1 - ((parseFloat(document.getElementById('taxRate').value) || 0) / 100);
 
-        const origMins = (parseInt(row.origSOf.slice(0,2)) * 60) + parseInt(row.origSOf.slice(2));
-        let newMins = (parseInt(newVal.slice(0,2)) * 60) + parseInt(newVal.slice(2));
+        const origSOfMins = (parseInt(row.origSOf.slice(0,2)) * 60) + parseInt(row.origSOf.slice(2));
+        let newSOfMins = (parseInt(newVal.slice(0,2)) * 60) + parseInt(newVal.slice(2));
         
-        if (newMins < origMins - 600) newMins += 1440; // Handle midnight wrap
+        // Correct Midnight Wrap Logic
+        if (newSOfMins < origSOfMins) {
+            newSOfMins += 1440; 
+        }
 
-        const newTotalDuty = row.origDuty + (newMins - origMins);
+        const delta = newSOfMins - origSOfMins;
+        const newTotalDuty = row.origDuty + delta; // This adds the extension to original duty
         const newD60 = newTotalDuty * 0.6;
         
         const baselinePay = Math.max(row.credit, row.origD60);
         const simulatedPay = Math.max(row.credit, newD60);
         const diffMins = Math.max(0, simulatedPay - baselinePay);
-        
         const gross = (diffMins / 60) * rate;
 
+        // Update Table Cells
+        document.getElementById(`newDuty-${index}`).innerText = formatTime(newTotalDuty);
         document.getElementById(`newD60-${index}`).innerText = formatTime(newD60);
         document.getElementById(`gross-${index}`).innerText = `$${gross.toFixed(2)}`;
         document.getElementById(`net-${index}`).innerText = `$${(gross * taxMult).toFixed(2)}`;
+        
+        const marginCell = document.getElementById(`marginCell-${index}`);
+        marginCell.innerText = formatTime(Math.abs(row.credit - newD60));
+        marginCell.className = `mono ${getMarginClass(row.credit, newD60)}`;
     }
 
     function updateAllCalculations() {
         state.rosterData.forEach((_, i) => {
-            const input = document.querySelectorAll('.adj-input')[i];
-            if (input && input.value) calculateAdjustment(i, input.value);
+            const inputs = document.querySelectorAll('.adj-input');
+            if (inputs[i] && inputs[i].value) calculateAdjustment(i, inputs[i].value);
         });
     }
 
@@ -332,36 +284,19 @@
     function exportSingleDay(index) {
         const row = state.rosterData[index];
         const date = getFullDate(row);
-        if (!date) return alert("Date context lost. Please re-paste roster.");
-
-        const margin = formatTime(Math.abs(row.credit - row.origD60));
-        const title = `DPC60 Margin: ${margin}`;
-        const desc = `Duty: ${formatTime(row.origDuty)} | Credit: ${formatTime(row.credit)}`;
-        
+        if (!date) return alert("Date error.");
+        const title = `DPC60 Margin: ${formatTime(Math.abs(row.credit - row.origD60))}`;
         const start = date.toISOString().replace(/-|:|\.\d+/g, "");
         const end = new Date(date.getTime() + 30*60000).toISOString().replace(/-|:|\.\d+/g, "");
-
-        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(desc)}`;
-        window.open(url, '_blank');
+        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}`, '_blank');
     }
 
-    function exportToCalendar() {
-        if (!state.rosterData.length) return alert("No data to export.");
-        if (state.rosterData.length > 5) {
-            if (!confirm("This will attempt to open multiple tabs. Your browser might block them. Continue?")) return;
-        }
-        state.rosterData.forEach((_, i) => exportSingleDay(i));
-    }
-
+    function exportToCalendar() { state.rosterData.forEach((_, i) => exportSingleDay(i)); }
     function exportToEmail() {
-        if (!state.rosterData.length) return;
-        let body = `DPC60 ANALYSIS\n${document.getElementById('bidPeriod').value}\n\n`;
-        state.rosterData.forEach(r => {
-            body += `${r.dateStr}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`;
-        });
+        let body = `DPC60 ANALYSIS\n\n`;
+        state.rosterData.forEach(r => body += `${r.dateStr}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`);
         window.location.href = `mailto:?subject=Roster Analysis&body=${encodeURIComponent(body)}`;
     }
 </script>
-
 </body>
 </html>
