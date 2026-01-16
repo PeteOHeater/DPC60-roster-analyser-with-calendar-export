@@ -16,69 +16,211 @@
 
         body { 
             font-family: 'Inter', -apple-system, sans-serif; 
-            padding: 40px 20px; background: var(--apple-bg); 
-            color: var(--aviation-black); -webkit-font-smoothing: antialiased;
+            padding: 40px 20px; 
+            background: var(--apple-bg); 
+            color: var(--aviation-black);
+            -webkit-font-smoothing: antialiased;
         }
 
         .card { 
-            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px);
-            padding: 40px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
-            max-width: 1450px; margin: auto; border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 40px; 
+            border-radius: 20px; 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
+            max-width: 1400px; 
+            margin: auto; 
+            border: 1px solid var(--glass-border);
         }
 
-        h2 { text-align: center; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 10px; }
+        h2 { 
+            color: #000000; 
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-top: 0; 
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .controls { 
+            display: flex; 
+            gap: 30px; 
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
         
-        .bid-info { 
-            text-align: center; color: var(--accent-red); font-weight: 600; 
-            font-size: 14px; margin-bottom: 30px; min-height: 20px;
+        label { 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            font-weight: 600; 
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
         }
 
-        .controls { display: flex; gap: 25px; justify-content: center; margin-bottom: 25px; }
-        .input-group { display: flex; flex-direction: column; gap: 6px; }
-        label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--text-secondary); }
-
-        input[type="number"], input[type="text"] { 
-            padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: #fff;
+        input[type="number"], input[type="text"], input[type="month"] { 
+            padding: 10px 14px; 
+            border: 1px solid #d2d2d7; 
+            border-radius: 8px; 
+            font-size: 14px;
+            background: white;
+            transition: border 0.2s ease;
         }
+
+        input:focus { outline: none; border-color: var(--aviation-black); }
 
         textarea { 
-            width: 100%; height: 140px; padding: 15px; border: 1px solid #d2d2d7; 
-            border-radius: 12px; font-family: 'SF Mono', monospace; font-size: 12px;
-            box-sizing: border-box; background: rgba(255,255,255,0.5); resize: vertical;
+            width: 100%; 
+            height: 120px; 
+            padding: 15px; 
+            border: 1px solid #d2d2d7; 
+            border-radius: 12px; 
+            font-family: 'SF Mono', 'Courier New', monospace; 
+            font-size: 13px;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.5);
+            resize: vertical;
+            line-height: 1.5;
         }
 
-        .button-container { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .instructions-panel {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e5e5e7;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .instruction-item {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #424245;
+        }
+
+        .marker {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 6px;
+        }
+
         button { 
-            background: var(--aviation-black); color: white; border: none; padding: 12px 24px; 
-            border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s;
+            background: var(--aviation-black); 
+            color: white; 
+            border: none; 
+            padding: 14px 28px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 15px; 
+            margin-top: 20px;
+            transition: all 0.2s ease;
+            width: auto;
+            display: inline-block;
+            margin-left: 10px;
+            margin-right: 10px;
         }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-secondary { background: var(--accent-red); }
 
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 30px; }
+        button:hover { background: #333; transform: translateY(-1px); }
+        
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn-secondary {
+            background: var(--accent-red);
+        }
+        
+        .btn-secondary:hover {
+            background: #c91a20;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: separate; 
+            border-spacing: 0;
+            margin-top: 40px; 
+        }
+
         th { 
-            color: var(--text-secondary); text-transform: uppercase; font-size: 9px; 
-            padding: 12px; border-bottom: 1px solid #d2d2d7; text-align: left;
+            color: var(--text-secondary); 
+            text-transform: uppercase; 
+            font-size: 10px; 
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 12px;
+            border-bottom: 1px solid #d2d2d7;
+            vertical-align: bottom;
         }
-        td { padding: 14px 12px; border-bottom: 1px solid #f2f2f2; font-size: 13px; }
 
+        td { 
+            padding: 16px 12px; 
+            border-bottom: 1px solid #f2f2f2;
+            font-size: 13px;
+            color: #1d1d1f;
+        }
+        
+        .export-btn {
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .export-btn:hover {
+            background: #c91a20;
+            transform: translateY(-1px);
+        }
+        
+        .export-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .mono { font-family: 'SF Mono', 'Roboto Mono', monospace; font-weight: 500; }
+        
+        .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; } 
+        .margin-blue { background-color: #e3f2fd; color: #1565c0; border-radius: 4px; }  
+        .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; } 
+        
+        .extra-gross { font-weight: 700; color: #000; } 
+        .extra-net { color: #16a34a; font-weight: 700; }   
+        
         .adj-input { 
-            width: 65px; padding: 6px !important; border: 1.5px solid var(--accent-red) !important; 
-            border-radius: 6px; text-align: center; font-weight: 700;
+            width: 70px; 
+            padding: 6px; 
+            border: 1.5px solid var(--accent-red) !important; 
+            border-radius: 6px; 
+            text-align: center;
+            font-family: monospace;
+            font-weight: bold;
         }
 
-        .mono { font-family: 'SF Mono', 'Roboto Mono', monospace; }
-        .margin-green { color: #2e7d32; font-weight: 600; } 
-        .margin-amber { color: #ef6c00; font-weight: 600; }
-        .extra-net { color: #16a34a; font-weight: 700; }
-        .export-btn { padding: 4px 8px; font-size: 10px; border-radius: 5px; background: #e5e5e7; color: #000; }
+        .duty-col { color: var(--text-secondary); }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>DPC60 Roster Analyser</h2>
-    <div id="bidInfo" class="bid-info">Paste Roster to identify Bid Period</div>
     
     <div class="controls">
         <div class="input-group">
@@ -89,13 +231,25 @@
             <label>Tax Rate %</label>
             <input type="number" id="taxRate" value="47" oninput="updateAll()">
         </div>
+
     </div>
 
-    <textarea id="rosterInput" placeholder="Paste entire roster including the summary/pattern area at the bottom..."></textarea>
+    <textarea id="rosterInput" placeholder="Use the send roster function in WebCis, then copy/paste all into here"></textarea>
+
+    <div class="instructions-panel">
+        <div class="instruction-item">
+            <span class="marker" style="background: #e8f5e9; border: 1px solid #2e7d32;"></span>
+            <strong>Green:</strong> Pattern is built to DPC60 or a past pattern has been increased to DPC60.
+        </div>
+        <div class="instruction-item">
+            <span class="marker" style="background: #fff8e1; border: 1px solid #ef6c00;"></span>
+            <strong>Amber:</strong> Credit Hours paid unless margin is extended (eg late sign off due disruption).
+        </div>
+    </div>
     
     <div class="button-container">
         <button onclick="processRoster()">Process Roster</button>
-        <button class="btn-secondary" onclick="exportToCalendar()">Export Alerts</button>
+        <button class="btn-secondary" onclick="exportToCalendar()">Export Margin Alerts to Calendar</button>
     </div>
 
     <div id="tableContainer"></div>
@@ -103,12 +257,9 @@
 
 <script>
 let rosterData = [];
-const MONTH_MAP = {"JAN":0,"FEB":1,"MAR":2,"APR":3,"MAY":4,"JUN":5,"JUL":6,"AUG":7,"SEP":8,"OCT":9,"NOV":10,"DEC":11};
 
-function formatTime(m) {
-    const mins = Math.max(0, Math.round(m));
-    return Math.floor(mins / 60) + ":" + (mins % 60).toString().padStart(2, '0');
-}
+let detectedMonth = null;
+let detectedYear = null;
 
 function parseTime(s) {
     if (!s || !s.includes(':')) return 0;
@@ -116,138 +267,294 @@ function parseTime(s) {
     return (h * 60) + m;
 }
 
+function formatTime(m) {
+    const mins = Math.max(0, Math.round(m));
+    return Math.floor(mins / 60) + ":" + (mins % 60).toString().padStart(2, '0');
+}
+
+function getMarginClass(credit, d60) {
+    const diff = credit - d60;
+    if (Math.abs(diff) <= 0.5) return "margin-green";
+    if (credit < d60) return "margin-blue";
+    return "margin-amber";
+}
+
 function processRoster() {
     const text = document.getElementById('rosterInput').value;
     const lines = text.split('\n');
     rosterData = [];
-
-    // 1. EXTRACT BID PERIOD & DATES
-    let bidName = "Unknown Period";
-    let bidDates = "";
+    detectedMonth = null;
+    detectedYear = null;
     
-    const bidMatch = text.match(/Bid Period\s+(\d+)/i);
-    if (bidMatch) bidName = "Bid Period " + bidMatch[1];
-
-    // Look for Date Range (e.g., 02 FEB 26 - 01 MAR 26)
-    const rangeMatch = text.match(/(\d{2}\s+[A-Z]{3}\s+\d{2})\s+-\s+(\d{2}\s+[A-Z]{3}\s+\d{2})/i);
-    let startYear, startMonth;
-
-    if (rangeMatch) {
-        bidDates = `(${rangeMatch[1]} to ${rangeMatch[2]})`;
-        const parts = rangeMatch[1].split(' ');
-        startMonth = MONTH_MAP[parts[1].toUpperCase()];
-        startYear = 2000 + parseInt(parts[2]);
-    } else {
-        // Fallback to current system date if not found
-        const now = new Date();
-        startMonth = now.getMonth();
-        startYear = now.getFullYear();
+    // First, try to detect the month and year from the pattern details section
+    const monthYearRegex = /([A-Z][a-z]+)\s+(\d{4})/;
+    const monthNames = {
+        'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
+        'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
+    };
+    
+    for (const line of lines) {
+        const monthMatch = line.match(monthYearRegex);
+        if (monthMatch && monthNames[monthMatch[1]]) {
+            detectedMonth = monthNames[monthMatch[1]];
+            detectedYear = parseInt(monthMatch[2]);
+            console.log('Detected roster month:', monthMatch[1], detectedYear);
+            break;
+        }
     }
-    document.getElementById('bidInfo').innerText = `${bidName} ${bidDates}`;
-
-    // 2. PARSE CALENDAR
-    const lineRegex = /^(\d{2})\s+([A-Z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
-    let lastDay = 0;
-    let currentMonth = startMonth;
-    let currentYear = startYear;
+    
+    const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
+    let previousDay = null;
 
     lines.forEach((line, index) => {
         const match = line.match(lineRegex);
         if (match) {
-            const dayNum = parseInt(match[1]);
-            if (dayNum < lastDay) {
-                currentMonth++;
-                if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+            const currentDay = parseInt(match[1]);
+            
+            // Detect if we've wrapped to a new month (day number decreased)
+            let monthOffset = 0;
+            if (previousDay !== null && currentDay < previousDay) {
+                monthOffset = 1; // We've moved to the next month
             }
-            lastDay = dayNum;
-
-            const duty = parseTime(match[5]);
-            const credit = parseTime(match[6]);
-            const d60 = duty * 0.6;
-
+            
+            const dutyMins = parseTime(match[5]);
+            const credMins = parseTime(match[6]);
+            const d60 = dutyMins * 0.6;
+            
             rosterData.push({
-                id: index,
-                day: dayNum, month: currentMonth, year: currentYear,
-                dateStr: `${dayNum} ${Object.keys(MONTH_MAP)[currentMonth]}`,
-                sOn: match[3], origSOf: match[4],
-                origDuty: duty, origCredit: credit, origD60: d60
+                id: index, 
+                day: match[1],
+                dayName: match[2],
+                date: `${match[1]} ${match[2]}`,
+                monthOffset: monthOffset,
+                sOn: match[3], 
+                origSOf: match[4],
+                origDuty: dutyMins, 
+                credit: credMins, 
+                origD60: d60
             });
+            
+            previousDay = currentDay;
         }
     });
+    
+    // Apply cumulative month offsets
+    let cumulativeOffset = 0;
+    rosterData.forEach(row => {
+        if (row.monthOffset > 0) {
+            cumulativeOffset += row.monthOffset;
+        }
+        row.actualMonthOffset = cumulativeOffset;
+    });
+    
+    if (rosterData.length > 0) {
+        console.log('Processed roster data:', rosterData);
+        if (detectedMonth && detectedYear) {
+            console.log('Using detected date:', `${detectedYear}-${detectedMonth}`);
+        } else {
+            console.warn('Could not detect month/year from roster. Please ensure you copied the full roster including pattern details.');
+        }
+    }
+    
     renderTable();
 }
 
 function renderTable() {
     let html = `<table><tr>
-        <th>Date</th><th>Roster S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
-        <th>New S-Off</th><th>New .6 Duty</th><th>Extra Gross</th><th>Net (Taxed)</th><th>Cal</th>
+        <th>Date</th>
+        <th>Roster S-Off</th>
+        <th>Duty</th>
+        <th>Credit</th>
+        <th>.6 Duty</th>
+        <th>Margin Between .6 Duty and Credit Hour</th>
+        <th>New S-Off</th>
+        <th>New Duty</th>
+        <th>New .6</th>
+        <th>Extra Gross</th>
+        <th>Net After Tax</th>
+        <th>Export</th>
     </tr>`;
 
     rosterData.forEach(row => {
-        const marginVal = Math.abs(row.origCredit - row.origD60);
-        const mClass = marginVal < 30 ? "margin-amber" : "margin-green";
-
-        html += `<tr id="row-${row.id}">
-            <td class="mono">${row.dateStr}</td>
+        const mClass = getMarginClass(row.credit, row.origD60);
+        const marginVal = Math.abs(row.credit - row.origD60);
+        const isAlert = marginVal < 30;
+        html += `<tr>
+            <td class="mono">${row.date}</td>
             <td class="mono">${row.origSOf}</td>
-            <td class="mono">${formatTime(row.origDuty)}</td>
-            <td class="mono">${formatTime(row.origCredit)}</td>
+            <td class="duty-col mono">${formatTime(row.origDuty)}</td>
+            <td class="mono">${formatTime(row.credit)}</td>
             <td class="mono">${formatTime(row.origD60)}</td>
             <td class="${mClass} mono">${formatTime(marginVal)}</td>
-            <td><input type="text" maxlength="4" class="adj-input" placeholder="HHMM" oninput="calculateRow(${row.id})" id="in-${row.id}"></td>
-            <td class="mono" id="newD60-${row.id}">-</td>
-            <td class="mono" id="gross-${row.id}">$0.00</td>
-            <td class="extra-net mono" id="net-${row.id}">$0.00</td>
-            <td><button class="export-btn" onclick="exportDay(${row.id})">📅</button></td>
+            <td><input type="text" maxlength="4" class="adj-input" id="in-${row.id}" oninput="run(${row.id})" placeholder="HHMM"></td>
+            <td id="d100-${row.id}" class="mono">-</td>
+            <td id="d60-${row.id}" class="mono">-</td>
+            <td id="gr-${row.id}" class="extra-gross mono">$0.00</td>
+            <td id="net-${row.id}" class="extra-net mono">$0.00</td>
+            <td>
+                <button class="export-btn" onclick="exportSingleDay(${row.id})" ${!isAlert ? 'disabled' : ''}>
+                    ${isAlert ? '📅 Export' : 'No Alert'}
+                </button>
+            </td>
         </tr>`;
     });
     document.getElementById('tableContainer').innerHTML = html + "</table>";
 }
 
-function calculateRow(id) {
+function run(id) {
     const row = rosterData.find(r => r.id === id);
-    const newVal = document.getElementById(`in-${id}`).value;
+    const val = document.getElementById(`in-${id}`).value;
     const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
     const tax = (parseFloat(document.getElementById('taxRate').value) || 0) / 100;
 
-    if (newVal.length === 4) {
-        const sOnMins = (parseInt(row.sOn.substring(0,2)) * 60) + parseInt(row.sOn.substring(2));
-        let sOffMins = (parseInt(newVal.substring(0,2)) * 60) + parseInt(newVal.substring(2));
+    if (val.length === 4) {
+        const origSOfMins = (parseInt(row.origSOf.substring(0,2)) * 60) + parseInt(row.origSOf.substring(2));
+        let newSOfMins = (parseInt(val.substring(0,2)) * 60) + parseInt(val.substring(2));
+        if (newSOfMins < origSOfMins - 600) newSOfMins += 1440; 
         
-        // Midnight rollover check
-        if (sOffMins < sOnMins) sOffMins += 1440;
-
-        const newDuty = sOffMins - sOnMins;
-        const newD60 = newDuty * 0.6;
+        const delta = newSOfMins - origSOfMins;
+        const newTotalDuty = row.origDuty + delta;
+        const newD60 = newTotalDuty * 0.6;
         
-        // Calculate Extra Pay: New DPC60 vs the higher of Original Credit or Original DPC60
-        const baseline = Math.max(row.origCredit, row.origD60);
-        const extraMins = Math.max(0, newD60 - baseline);
-        const gross = (extraMins / 60) * rate;
+        const baselinePay = Math.max(row.credit, row.origD60);
+        const simulatedPay = Math.max(row.credit, newD60);
+        const diff = Math.max(0, simulatedPay - baselinePay);
+        
+        const gross = (diff / 60) * rate;
+        
+        const marginEl = document.getElementById(`in-${id}`).parentElement.parentElement.cells[5];
+        marginEl.className = `${getMarginClass(row.credit, newD60)} mono`;
+        marginEl.innerText = formatTime(Math.abs(row.credit - newD60));
 
-        document.getElementById(`newD60-${id}`).innerText = formatTime(newD60);
-        document.getElementById(`gross-${id}`).innerText = "$" + gross.toFixed(2);
+        document.getElementById(`d100-${id}`).innerText = formatTime(newTotalDuty);
+        document.getElementById(`d60-${id}`).innerText = formatTime(newD60);
+        document.getElementById(`gr-${id}`).innerText = "$" + gross.toFixed(2);
         document.getElementById(`net-${id}`).innerText = "$" + (gross * (1 - tax)).toFixed(2);
     }
 }
 
-function updateAll() { rosterData.forEach(r => calculateRow(r.id)); }
+function updateAll() { 
+    rosterData.forEach(r => run(r.id)); 
+}
 
-function exportDay(id) {
-    const row = rosterData.find(r => r.id === id);
-    const date = new Date(row.year, row.month, row.day);
-    const start = date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+function parseDate(row) {
+    if (!detectedMonth || !detectedYear) {
+        console.error('Could not detect roster month/year');
+        alert('Could not detect the roster month/year. Please ensure you copied the full roster including the pattern details section below the calendar.');
+        return null;
+    }
     
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-        `&text=DPC60+Alert:+${row.dateStr}` +
-        `&dates=${start}/${start}` +
-        `&details=Original+Credit:+${formatTime(row.origCredit)}%0AOriginal+.6+Duty:+${formatTime(row.origD60)}`;
-    window.open(url, '_blank');
+    const month = detectedMonth;
+    const year = detectedYear;
+    const day = parseInt(row.day);
+    
+    // Apply month offset for duties that span into the next month
+    const actualMonth = month + row.actualMonthOffset;
+    const actualYear = actualMonth > 12 ? year + 1 : year;
+    const adjustedMonth = actualMonth > 12 ? actualMonth - 12 : actualMonth;
+    
+    const date = new Date(actualYear, adjustedMonth - 1, day);
+    
+    console.log('Parsed date:', row.date, 'Month offset:', row.actualMonthOffset, '→', date.toDateString());
+    return date;
+}
+
+function createCalendarEvent(row) {
+    const marginMins = Math.abs(row.credit - row.origD60);
+    const dutyDate = parseDate(row);
+    
+    if (!dutyDate) {
+        return null;
+    }
+    
+    const title = `⚠️ DPC60 Alert: ${formatTime(marginMins)} margin`;
+    const description = `DUTY DATE: ${row.date}%0A` +
+                      `Scheduled Sign-Off: ${row.origSOf}%0A` +
+                      `Duty Time: ${formatTime(row.origDuty)}%0A` +
+                      `Credit Hours: ${formatTime(row.credit)}%0A` +
+                      `.6 Duty: ${formatTime(row.origD60)}%0A` +
+                      `MARGIN: ${formatTime(marginMins)}%0A%0A` +
+                      `⚠️ This duty has less than 30 minutes margin between credit hours and DPC60. ` +
+                      `Monitor for any delays or extensions that could trigger credit hour payment.`;
+    
+    const startDate = dutyDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const endDate = new Date(dutyDate.getTime() + 30*60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    
+    const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+                  `&text=${encodeURIComponent(title)}` +
+                  `&dates=${startDate}/${endDate}` +
+                  `&details=${description}` +
+                  `&location=DPC60%20Roster%20Analyser`;
+    
+    return calUrl;
+}
+
+function exportSingleDay(id) {
+    const row = rosterData.find(r => r.id === id);
+    if (!row) {
+        console.error('Row not found for id:', id);
+        alert('Error: Could not find duty data.');
+        return;
+    }
+    
+    const marginMins = Math.abs(row.credit - row.origD60);
+    console.log('Exporting duty:', row.date, 'Margin:', formatTime(marginMins));
+    
+    if (marginMins >= 30) {
+        alert('This duty has a margin of 30 minutes or more. No alert needed.');
+        return;
+    }
+    
+    try {
+        const calUrl = createCalendarEvent(row);
+        if (!calUrl) return;
+        
+        console.log('Opening calendar URL:', calUrl);
+        const newWindow = window.open(calUrl, '_blank');
+        
+        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+            alert('Pop-up blocked! Please allow pop-ups for this site and try again.');
+        }
+    } catch (error) {
+        console.error('Error opening calendar:', error);
+        alert('Error opening calendar. Check console for details.');
+    }
 }
 
 function exportToCalendar() {
-    rosterData.filter(r => Math.abs(r.origCredit - r.origD60) < 30).forEach(row => exportDay(row.id));
+    if (rosterData.length === 0) {
+        alert('Please process a roster first!');
+        return;
+    }
+    
+    const alertDuties = rosterData.filter(row => {
+        const marginMins = Math.abs(row.credit - row.origD60);
+        return marginMins < 30;
+    });
+    
+    if (alertDuties.length === 0) {
+        alert('No duties found with margin less than 30 minutes.');
+        return;
+    }
+    
+    console.log(`Exporting ${alertDuties.length} duties with margins < 30 minutes`);
+    
+    try {
+        alertDuties.forEach((row, index) => {
+            const calUrl = createCalendarEvent(row);
+            if (calUrl) {
+                console.log(`Opening calendar ${index + 1}/${alertDuties.length}:`, row.date);
+                window.open(calUrl, '_blank');
+            }
+        });
+        
+        alert(`Opening ${alertDuties.length} calendar event(s). If you don't see new tabs, please allow pop-ups for this site.`);
+    } catch (error) {
+        console.error('Error during bulk export:', error);
+        alert('Error exporting to calendar. Check console for details.');
+    }
 }
 </script>
+
 </body>
 </html>
