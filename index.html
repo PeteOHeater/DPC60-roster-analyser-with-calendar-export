@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DPC 60 Roster Analyser</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --apple-bg: #f5f5f7;
@@ -15,66 +15,28 @@
             --success-green: #16a34a;
         }
 
-        body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            padding: 40px 20px; 
-            background: var(--apple-bg); 
-            color: var(--aviation-black);
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .card { 
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            padding: 40px; 
-            border-radius: 20px; 
-            box-shadow: 0 8px 30px rgba(0,0,0,0.04); 
-            max-width: 1450px; 
-            margin: auto; 
-            border: 1px solid var(--glass-border);
-        }
-
-        h2 { font-weight: 700; letter-spacing: -0.5px; margin: 0 0 30px 0; font-size: 28px; text-align: center; }
+        body { font-family: 'Inter', sans-serif; padding: 40px 20px; background: var(--apple-bg); color: var(--aviation-black); -webkit-font-smoothing: antialiased; }
+        .card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); padding: 40px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); max-width: 1500px; margin: auto; border: 1px solid var(--glass-border); }
+        h2 { font-weight: 700; text-align: center; margin-bottom: 30px; font-size: 28px; }
 
         .controls { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
         .input-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); }
+        input[type="number"], input[type="text"] { padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: white; }
 
-        label { font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.5px; }
+        textarea { width: 100%; height: 120px; padding: 15px; border: 1px solid #d2d2d7; border-radius: 12px; font-family: monospace; font-size: 13px; box-sizing: border-box; margin-bottom: 20px; }
 
-        input[type="number"], input[type="text"] { 
-            padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: white; 
-        }
-
-        textarea { 
-            width: 100%; height: 120px; padding: 15px; border: 1px solid #d2d2d7; border-radius: 12px; 
-            font-family: 'SF Mono', monospace; font-size: 13px; box-sizing: border-box; background: rgba(255,255,255,0.5); resize: vertical;
-        }
-
-        .instructions-panel {
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 12px;
-            background: #fff;
-            border: 1px solid #e5e5e7;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .instruction-item { font-size: 12px; line-height: 1.5; color: #424245; }
+        .instructions-panel { margin: 20px 0; padding: 15px; border-radius: 12px; background: #fff; border: 1px solid #e5e5e7; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .instruction-item { font-size: 12px; color: #424245; }
         .marker { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; }
 
-        .button-container { display: flex; justify-content: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
-
-        button { 
-            background: var(--aviation-black); color: white; border: none; padding: 12px 24px; 
-            border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;
-        }
-
+        .button-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; }
+        button { background: var(--aviation-black); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         .btn-secondary { background: var(--accent-red); }
         .btn-outline { background: transparent; color: var(--aviation-black); border: 1px solid var(--aviation-black); }
 
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 30px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
         th { color: var(--text-secondary); text-transform: uppercase; font-size: 10px; padding: 12px; border-bottom: 1px solid #d2d2d7; text-align: left; }
         td { padding: 14px 12px; border-bottom: 1px solid #f2f2f2; font-size: 13px; }
 
@@ -83,9 +45,9 @@
         .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; padding: 2px 6px; } 
 
         .extra-net { color: var(--success-green); font-weight: 700; }
-        .adj-input { width: 65px; padding: 5px; border: 2px solid var(--accent-red); border-radius: 4px; text-align: center; font-weight: bold; }
+        .adj-input { width: 70px; padding: 6px; border: 2px solid var(--accent-red); border-radius: 6px; text-align: center; font-weight: bold; }
         .mono { font-family: 'SF Mono', monospace; }
-        .export-btn { background: #3a3a3c; font-size: 11px; padding: 8px 12px; display: flex; align-items: center; gap: 6px; }
+        .export-btn { background: #3a3a3c; font-size: 11px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
     </style>
 </head>
 <body>
@@ -94,31 +56,16 @@
     <h2>DPC60 Roster Analyser</h2>
     
     <div class="controls">
-        <div class="input-group">
-            <label>Hourly Rate ($)</label>
-            <input type="number" id="hourlyRate" value="353" oninput="updateAllCalculations()">
-        </div>
-        <div class="input-group">
-            <label>Tax Rate %</label>
-            <input type="number" id="taxRate" value="47" oninput="updateAllCalculations()">
-        </div>
-        <div class="input-group">
-            <label>Bid Period</label>
-            <input type="text" id="bidPeriod" readonly style="background: #eee; color: #666;">
-        </div>
+        <div class="input-group"><label>Hourly Rate ($)</label><input type="number" id="hourlyRate" value="353" oninput="updateAllCalculations()"></div>
+        <div class="input-group"><label>Tax Rate %</label><input type="number" id="taxRate" value="47" oninput="updateAllCalculations()"></div>
+        <div class="input-group"><label>Bid Period</label><input type="text" id="bidPeriod" readonly style="background: #eee;"></div>
     </div>
 
     <textarea id="rosterInput" placeholder="Use the send roster function in WebCis, then copy/paste all into here"></textarea>
 
     <div class="instructions-panel">
-        <div class="instruction-item">
-            <span class="marker" style="background: #e8f5e9; border: 1px solid #2e7d32;"></span>
-            <strong>Green:</strong> Pattern is built to DPC60 or a past pattern has been increased to DPC60.
-        </div>
-        <div class="instruction-item">
-            <span class="marker" style="background: #fff8e1; border: 1px solid #ef6c00;"></span>
-            <strong>Amber:</strong> Credit Hours paid unless margin is extended (eg late sign off due disruption).
-        </div>
+        <div class="instruction-item"><span class="marker" style="background: #e8f5e9; border: 1px solid #2e7d32;"></span><strong>Green:</strong> Built to DPC60 or increased to DPC60.</div>
+        <div class="instruction-item"><span class="marker" style="background: #fff8e1; border: 1px solid #ef6c00;"></span><strong>Amber:</strong> Credit Hours paid unless margin is extended.</div>
     </div>
 
     <div class="button-container">
@@ -132,7 +79,7 @@
 </div>
 
 <script>
-    let state = { rosterData: [], detectedMonth: null, detectedYear: null };
+    let state = { rosterData: [], detectedMonth: "", detectedYear: "" };
 
     const parseTime = (s) => {
         if (!s || !s.includes(':')) return 0;
@@ -162,8 +109,7 @@
         const lines = text.split('\n');
         state.rosterData = [];
         
-        // Month/Year extraction fix
-        const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+        // Find Month and Year from Header
         lines.forEach(line => {
             const dateMatch = line.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
             const bpMatch = line.match(/Bid Period\s+(\d+)/i);
@@ -171,23 +117,19 @@
                 state.detectedMonth = dateMatch[1];
                 state.detectedYear = dateMatch[2];
             }
-            if (bpMatch) document.getElementById('bidPeriod').value = `BP ${bpMatch[1]} ${state.detectedMonth || ''} ${state.detectedYear || ''}`;
+            if (bpMatch) document.getElementById('bidPeriod').value = `BP ${bpMatch[1]} - ${state.detectedMonth} ${state.detectedYear}`;
         });
 
+        // Parse Row Data
         const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
         lines.forEach(line => {
             const match = line.match(lineRegex);
             if (match) {
-                const day = match[1];
-                const dayName = match[2];
                 const dutyMins = parseTime(match[5]);
                 const credMins = parseTime(match[6]);
                 
-                // Build robust display date
-                const displayDate = `${day} ${dayName} ${state.detectedMonth || ''} ${state.detectedYear || ''}`;
-
                 state.rosterData.push({
-                    dateDisplay: displayDate,
+                    fullDate: `${match[1]} ${match[2]} ${state.detectedMonth} ${state.detectedYear}`,
                     origSOf: match[4],
                     origDuty: dutyMins,
                     credit: credMins,
@@ -207,7 +149,7 @@
         state.rosterData.forEach((row, i) => {
             const margin = Math.abs(row.credit - row.origD60);
             html += `<tr>
-                <td class="mono" style="white-space:nowrap">${row.dateDisplay}</td>
+                <td class="mono" style="white-space:nowrap">${row.fullDate}</td>
                 <td class="mono">${row.origSOf}</td>
                 <td class="mono" style="color:var(--text-secondary)">${formatTime(row.origDuty)}</td>
                 <td class="mono">${formatTime(row.credit)}</td>
@@ -216,9 +158,9 @@
                 <td><input type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
                 <td id="newDuty-${i}" class="mono">-</td>
                 <td id="newD60-${i}" class="mono">-</td>
-                <td id="gross-${i}" class="mono" style="font-weight:700">$0.00</td>
+                <td id="gross-${i}" class="mono">$0.00</td>
                 <td id="net-${i}" class="mono extra-net">$0.00</td>
-                <td><button class="export-btn" onclick="exportDay(${i})">📅 Export</button></td>
+                <td><button class="export-btn" onclick="exportDay(${i})">🗓️ Export</button></td>
             </tr>`;
         });
         document.getElementById('tableContainer').innerHTML = html + `</tbody></table>`;
@@ -238,11 +180,9 @@
         const finalDuty = row.origDuty + delta;
         const finalD60 = finalDuty * 0.6;
 
-        // Corrected Pay Math: 
-        // We pay based on the higher of the original baseline (Credit or .6 Duty)
-        const originalBasis = Math.max(row.credit, row.origD60);
-        const newBasis = Math.max(row.credit, finalD60);
-        const diffMins = Math.max(0, newBasis - originalBasis);
+        // FIXED PAY LOGIC: Pay is the difference between NEW .6 Duty and ORIGINAL .6 Duty
+        // OR the difference between NEW .6 Duty and Credit (whichever results in higher pay)
+        const diffMins = Math.max(0, finalD60 - row.origD60);
         
         const gross = (diffMins / 60) * rate;
 
@@ -265,10 +205,16 @@
 
     function exportDay(i) {
         const row = state.rosterData[i];
-        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=DPC60+Extension+${encodeURIComponent(row.dateDisplay)}`, '_blank');
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=DPC60+Extension+${encodeURIComponent(row.fullDate)}`;
+        window.open(url, '_blank');
     }
 
     function exportToCalendar() { state.rosterData.forEach((_, i) => exportDay(i)); }
+    function exportToEmail() {
+        let body = `DPC60 ANALYSIS\n\n`;
+        state.rosterData.forEach(r => body += `${r.fullDate}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`);
+        window.location.href = `mailto:?subject=Roster Analysis&body=${encodeURIComponent(body)}`;
+    }
 </script>
 </body>
 </html>
