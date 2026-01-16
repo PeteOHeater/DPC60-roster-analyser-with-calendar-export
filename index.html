@@ -85,6 +85,7 @@
         .extra-net { color: var(--success-green); font-weight: 700; }
         .adj-input { width: 65px; padding: 5px; border: 2px solid var(--accent-red); border-radius: 4px; text-align: center; font-weight: bold; }
         .mono { font-family: 'SF Mono', monospace; }
+        .export-btn { background: #3a3a3c; font-size: 11px; padding: 8px 12px; display: flex; align-items: center; gap: 6px; }
     </style>
 </head>
 <body>
@@ -131,7 +132,7 @@
 </div>
 
 <script>
-    let state = { rosterData: [], detectedMonth: null, detectedYear: null, bidPeriodInfo: "" };
+    let state = { rosterData: [], detectedMonth: null, detectedYear: null };
 
     const parseTime = (s) => {
         if (!s || !s.includes(':')) return 0;
@@ -145,9 +146,8 @@
     };
 
     const getMarginClass = (credit, d60) => {
-        const diff = credit - d60;
-        if (Math.abs(diff) <= 0.5) return 'margin-green';
-        return credit < d60 ? 'margin-blue' : 'margin-amber';
+        if (Math.abs(credit - d60) <= 0.5) return 'margin-green';
+        return credit > d60 ? 'margin-amber' : 'margin-blue';
     };
 
     function clearRoster() {
@@ -161,52 +161,41 @@
         const text = document.getElementById('rosterInput').value;
         const lines = text.split('\n');
         state.rosterData = [];
-        let cumulativeOffset = 0;
-        let previousDay = null;
-
-        // Enhanced Date & BP Parser
+        
+        // Month/Year extraction fix
+        const monthNames = ["january","february","march","april","may","june","july","august","september","october","november","december"];
         lines.forEach(line => {
             const dateMatch = line.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
             const bpMatch = line.match(/Bid Period\s+(\d+)/i);
             if (dateMatch) {
-                const months = ["january","february","march","april","may","june","july","august","september","october","november","december"];
-                state.detectedMonth = months.indexOf(dateMatch[1].toLowerCase());
-                state.detectedYear = parseInt(dateMatch[2]);
+                state.detectedMonth = dateMatch[1];
+                state.detectedYear = dateMatch[2];
             }
-            if (bpMatch) state.bidPeriodInfo = `BP ${bpMatch[1]}`;
+            if (bpMatch) document.getElementById('bidPeriod').value = `BP ${bpMatch[1]} ${state.detectedMonth || ''} ${state.detectedYear || ''}`;
         });
 
         const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
         lines.forEach(line => {
             const match = line.match(lineRegex);
             if (match) {
-                const dayNum = parseInt(match[1]);
-                if (previousDay !== null && dayNum < previousDay) cumulativeOffset++;
-                
+                const day = match[1];
+                const dayName = match[2];
                 const dutyMins = parseTime(match[5]);
                 const credMins = parseTime(match[6]);
-
-                // Calculate local date for display
-                let displayDate = `${dayNum} ${match[2]}`;
-                if (state.detectedYear) displayDate += ` ${state.detectedYear}`;
+                
+                // Build robust display date
+                const displayDate = `${day} ${dayName} ${state.detectedMonth || ''} ${state.detectedYear || ''}`;
 
                 state.rosterData.push({
-                    day: dayNum,
                     dateDisplay: displayDate,
-                    monthOffset: cumulativeOffset,
                     origSOf: match[4],
                     origDuty: dutyMins,
                     credit: credMins,
                     origD60: dutyMins * 0.6
                 });
-                previousDay = dayNum;
             }
         });
-
-        if (state.rosterData.length > 0) {
-            document.getElementById('bidPeriod').value = state.bidPeriodInfo || "Detected";
-            renderTable();
-        }
+        renderTable();
     }
 
     function renderTable() {
@@ -216,20 +205,20 @@
         </tr></thead><tbody>`;
 
         state.rosterData.forEach((row, i) => {
-            const marginVal = Math.abs(row.credit - row.origD60);
+            const margin = Math.abs(row.credit - row.origD60);
             html += `<tr>
                 <td class="mono" style="white-space:nowrap">${row.dateDisplay}</td>
                 <td class="mono">${row.origSOf}</td>
                 <td class="mono" style="color:var(--text-secondary)">${formatTime(row.origDuty)}</td>
                 <td class="mono">${formatTime(row.credit)}</td>
                 <td class="mono">${formatTime(row.origD60)}</td>
-                <td class="mono ${getMarginClass(row.credit, row.origD60)}" id="marginCell-${i}">${formatTime(marginVal)}</td>
+                <td class="mono ${getMarginClass(row.credit, row.origD60)}" id="marginCell-${i}">${formatTime(margin)}</td>
                 <td><input type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
                 <td id="newDuty-${i}" class="mono">-</td>
                 <td id="newD60-${i}" class="mono">-</td>
                 <td id="gross-${i}" class="mono" style="font-weight:700">$0.00</td>
                 <td id="net-${i}" class="mono extra-net">$0.00</td>
-                <td><button style="padding:5px 10px; font-size:10px; background:#444" onclick="exportSingleDay(${i})">📅</button></td>
+                <td><button class="export-btn" onclick="exportDay(${i})">📅 Export</button></td>
             </tr>`;
         });
         document.getElementById('tableContainer').innerHTML = html + `</tbody></table>`;
@@ -241,23 +230,20 @@
         const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
         const taxMult = 1 - ((parseFloat(document.getElementById('taxRate').value) || 0) / 100);
 
-        const h1 = parseInt(row.origSOf.slice(0,2));
-        const m1 = parseInt(row.origSOf.slice(2));
-        const h2 = parseInt(newVal.slice(0,2));
-        const m2 = parseInt(newVal.slice(2));
-
-        let t1 = (h1 * 60) + m1;
-        let t2 = (h2 * 60) + m2;
-        if (t2 < t1) t2 += 1440; // Midnight wrap
+        const t1 = (parseInt(row.origSOf.slice(0,2)) * 60) + parseInt(row.origSOf.slice(2));
+        let t2 = (parseInt(newVal.slice(0,2)) * 60) + parseInt(newVal.slice(2));
+        if (t2 < t1) t2 += 1440; // Midnight rollover
 
         const delta = t2 - t1;
         const finalDuty = row.origDuty + delta;
         const finalD60 = finalDuty * 0.6;
 
-        // Pay logic: Highest of (Credit OR .6 Duty)
-        const baseline = Math.max(row.credit, row.origD60);
-        const newTotal = Math.max(row.credit, finalD60);
-        const diffMins = Math.max(0, newTotal - baseline);
+        // Corrected Pay Math: 
+        // We pay based on the higher of the original baseline (Credit or .6 Duty)
+        const originalBasis = Math.max(row.credit, row.origD60);
+        const newBasis = Math.max(row.credit, finalD60);
+        const diffMins = Math.max(0, newBasis - originalBasis);
+        
         const gross = (diffMins / 60) * rate;
 
         document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDuty);
@@ -277,18 +263,12 @@
         });
     }
 
-    function exportSingleDay(index) {
-        const row = state.rosterData[index];
-        const title = `DPC60 Margin Extension`;
-        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}`, '_blank');
+    function exportDay(i) {
+        const row = state.rosterData[i];
+        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=DPC60+Extension+${encodeURIComponent(row.dateDisplay)}`, '_blank');
     }
 
-    function exportToCalendar() { state.rosterData.forEach((_, i) => exportSingleDay(i)); }
-    function exportToEmail() {
-        let body = `DPC60 ANALYSIS\n\n`;
-        state.rosterData.forEach(r => body += `${r.dateDisplay}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`);
-        window.location.href = `mailto:?subject=Roster Analysis&body=${encodeURIComponent(body)}`;
-    }
+    function exportToCalendar() { state.rosterData.forEach((_, i) => exportDay(i)); }
 </script>
 </body>
 </html>
