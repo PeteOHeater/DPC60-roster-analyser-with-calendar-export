@@ -189,10 +189,13 @@
             transform: translateY(-1px);
         }
         
-        .export-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
+        .export-btn-blue {
+            background: #1565c0;
+        }
+        
+        .export-btn-blue:hover {
+            background: #0d47a1;
+            transform: translateY(-1px);
         }
 
         .mono { font-family: 'SF Mono', 'Roboto Mono', monospace; font-weight: 500; }
@@ -231,7 +234,10 @@
             <label>Tax Rate %</label>
             <input type="number" id="taxRate" value="47" oninput="updateAll()">
         </div>
-
+        <div class="input-group">
+            <label>Bid Period</label>
+            <input type="text" id="bidPeriod" value="" readonly style="background: #f0f0f0;">
+        </div>
     </div>
 
     <textarea id="rosterInput" placeholder="Use the send roster function in WebCis, then copy/paste all into here"></textarea>
@@ -249,7 +255,8 @@
     
     <div class="button-container">
         <button onclick="processRoster()">Process Roster</button>
-        <button class="btn-secondary" onclick="exportToCalendar()">Export Margin Alerts to Calendar</button>
+        <button class="btn-secondary" onclick="exportToCalendar()">Export ALL Margins to Calendar</button>
+        <button class="btn-secondary" onclick="exportToEmail()">📧 Email Results</button>
     </div>
 
     <div id="tableContainer"></div>
@@ -257,75 +264,112 @@
 
 <script>
 let rosterData = [];
-
 let detectedMonth = null;
 let detectedYear = null;
+let bidPeriodStart = null;
+let bidPeriodEnd = null;
 
 function parseTime(s) {
     if (!s || !s.includes(':')) return 0;
-    const [h, m] = s.split(':').map(Number);
-    return (h * 60) + m;
+    var parts = s.split(':').map(Number);
+    return (parts[0] * 60) + parts[1];
 }
 
 function formatTime(m) {
-    const mins = Math.max(0, Math.round(m));
+    var mins = Math.max(0, Math.round(m));
     return Math.floor(mins / 60) + ":" + (mins % 60).toString().padStart(2, '0');
 }
 
 function getMarginClass(credit, d60) {
-    const diff = credit - d60;
+    var diff = credit - d60;
     if (Math.abs(diff) <= 0.5) return "margin-green";
     if (credit < d60) return "margin-blue";
     return "margin-amber";
 }
 
 function processRoster() {
-    const text = document.getElementById('rosterInput').value;
-    const lines = text.split('\n');
+    var text = document.getElementById('rosterInput').value;
+    var lines = text.split('\n');
     rosterData = [];
     detectedMonth = null;
     detectedYear = null;
+    bidPeriodStart = null;
+    bidPeriodEnd = null;
     
-    // First, try to detect the month and year from the pattern details section
-    const monthYearRegex = /([A-Z][a-z]+)\s+(\d{4})/;
-    const monthNames = {
-        'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
-        'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
+    var monthYearRegex = /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/i;
+    var monthNames = {
+        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
     };
     
-    for (const line of lines) {
-        const monthMatch = line.match(monthYearRegex);
-        if (monthMatch && monthNames[monthMatch[1]]) {
-            detectedMonth = monthNames[monthMatch[1]];
-            detectedYear = parseInt(monthMatch[2]);
-            console.log('Detected roster month:', monthMatch[1], detectedYear);
-            break;
+    var bidPeriodRegex = /(\d{2})\s+([A-Z][a-z]+)\s+(\d{4})\s*-\s*(\d{2})\s+([A-Z][a-z]+)\s+(\d{4})|(\d{2})\/(\d{2})\/(\d{4})\s*-\s*(\d{2})\/(\d{2})\/(\d{4})/;
+    var patternDateRegex = /(\d+)\s+DATED\s+(\d{1,2})([A-Z][a-z]{2})(\d{2})/i;
+    
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var monthMatch = line.match(monthYearRegex);
+        if (monthMatch) {
+            var monthName = monthMatch[1].toLowerCase();
+            if (monthNames[monthName]) {
+                detectedMonth = monthNames[monthName];
+                detectedYear = parseInt(monthMatch[2]);
+                console.log('Detected roster month:', monthMatch[1], detectedYear);
+            }
+        }
+        
+        var patternMatch = line.match(patternDateRegex);
+        if (patternMatch && !detectedMonth) {
+            var day = patternMatch[2];
+            var monthAbbr = patternMatch[3].toLowerCase();
+            var yearShort = patternMatch[4];
+            var fullYear = parseInt('20' + yearShort);
+            
+            var monthAbbrMap = {
+                'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+                'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+            };
+            
+            if (monthAbbrMap[monthAbbr]) {
+                detectedMonth = monthAbbrMap[monthAbbr];
+                detectedYear = fullYear;
+                console.log('Detected roster from pattern date:', day, monthAbbr, fullYear);
+            }
+        }
+        
+        var bidMatch = line.match(bidPeriodRegex);
+        if (bidMatch) {
+            if (bidMatch[1]) {
+                bidPeriodStart = bidMatch[1] + ' ' + bidMatch[2] + ' ' + bidMatch[3];
+                bidPeriodEnd = bidMatch[4] + ' ' + bidMatch[5] + ' ' + bidMatch[6];
+            } else if (bidMatch[7]) {
+                bidPeriodStart = bidMatch[7] + '/' + bidMatch[8] + '/' + bidMatch[9];
+                bidPeriodEnd = bidMatch[10] + '/' + bidMatch[11] + '/' + bidMatch[12];
+            }
+            console.log('Detected bid period:', bidPeriodStart, '-', bidPeriodEnd);
         }
     }
     
-    const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
-    let previousDay = null;
+    var lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
+    var previousDay = null;
 
-    lines.forEach((line, index) => {
-        const match = line.match(lineRegex);
+    for (var j = 0; j < lines.length; j++) {
+        var match = lines[j].match(lineRegex);
         if (match) {
-            const currentDay = parseInt(match[1]);
-            
-            // Detect if we've wrapped to a new month (day number decreased)
-            let monthOffset = 0;
+            var currentDay = parseInt(match[1]);
+            var monthOffset = 0;
             if (previousDay !== null && currentDay < previousDay) {
-                monthOffset = 1; // We've moved to the next month
+                monthOffset = 1;
             }
             
-            const dutyMins = parseTime(match[5]);
-            const credMins = parseTime(match[6]);
-            const d60 = dutyMins * 0.6;
+            var dutyMins = parseTime(match[5]);
+            var credMins = parseTime(match[6]);
+            var d60 = dutyMins * 0.6;
             
             rosterData.push({
-                id: index, 
+                id: j, 
                 day: match[1],
                 dayName: match[2],
-                date: `${match[1]} ${match[2]}`,
+                date: match[1] + ' ' + match[2],
                 monthOffset: monthOffset,
                 sOn: match[3], 
                 origSOf: match[4],
@@ -336,23 +380,28 @@ function processRoster() {
             
             previousDay = currentDay;
         }
-    });
+    }
     
-    // Apply cumulative month offsets
-    let cumulativeOffset = 0;
-    rosterData.forEach(row => {
-        if (row.monthOffset > 0) {
-            cumulativeOffset += row.monthOffset;
+    var cumulativeOffset = 0;
+    for (var k = 0; k < rosterData.length; k++) {
+        if (rosterData[k].monthOffset > 0) {
+            cumulativeOffset += rosterData[k].monthOffset;
         }
-        row.actualMonthOffset = cumulativeOffset;
-    });
+        rosterData[k].actualMonthOffset = cumulativeOffset;
+    }
     
     if (rosterData.length > 0) {
-        console.log('Processed roster data:', rosterData);
+        console.log('Processed ' + rosterData.length + ' duties');
         if (detectedMonth && detectedYear) {
-            console.log('Using detected date:', `${detectedYear}-${detectedMonth}`);
+            console.log('Using detected date:', detectedYear + '-' + detectedMonth);
         } else {
-            console.warn('Could not detect month/year from roster. Please ensure you copied the full roster including pattern details.');
+            console.warn('Could not detect month/year from roster.');
+        }
+        
+        if (bidPeriodStart && bidPeriodEnd) {
+            document.getElementById('bidPeriod').value = bidPeriodStart + ' - ' + bidPeriodEnd;
+        } else {
+            document.getElementById('bidPeriod').value = 'Not detected';
         }
     }
     
@@ -360,81 +409,91 @@ function processRoster() {
 }
 
 function renderTable() {
-    let html = `<table><tr>
-        <th>Date</th>
-        <th>Roster S-Off</th>
-        <th>Duty</th>
-        <th>Credit</th>
-        <th>.6 Duty</th>
-        <th>Margin Between .6 Duty and Credit Hour</th>
-        <th>New S-Off</th>
-        <th>New Duty</th>
-        <th>New .6</th>
-        <th>Extra Gross</th>
-        <th>Net After Tax</th>
-        <th>Export</th>
-    </tr>`;
+    var html = '<table><tr>' +
+        '<th>Date</th>' +
+        '<th>Roster S-Off</th>' +
+        '<th>Duty</th>' +
+        '<th>Credit</th>' +
+        '<th>.6 Duty</th>' +
+        '<th>Margin Between .6 Duty and Credit Hour</th>' +
+        '<th>New S-Off</th>' +
+        '<th>New Duty</th>' +
+        '<th>New .6</th>' +
+        '<th>Extra Gross</th>' +
+        '<th>Net After Tax</th>' +
+        '<th>Export</th>' +
+    '</tr>';
 
-    rosterData.forEach(row => {
-        const mClass = getMarginClass(row.credit, row.origD60);
-        const marginVal = Math.abs(row.credit - row.origD60);
-        const isAlert = marginVal < 30;
-        html += `<tr>
-            <td class="mono">${row.date}</td>
-            <td class="mono">${row.origSOf}</td>
-            <td class="duty-col mono">${formatTime(row.origDuty)}</td>
-            <td class="mono">${formatTime(row.credit)}</td>
-            <td class="mono">${formatTime(row.origD60)}</td>
-            <td class="${mClass} mono">${formatTime(marginVal)}</td>
-            <td><input type="text" maxlength="4" class="adj-input" id="in-${row.id}" oninput="run(${row.id})" placeholder="HHMM"></td>
-            <td id="d100-${row.id}" class="mono">-</td>
-            <td id="d60-${row.id}" class="mono">-</td>
-            <td id="gr-${row.id}" class="extra-gross mono">$0.00</td>
-            <td id="net-${row.id}" class="extra-net mono">$0.00</td>
-            <td>
-                <button class="export-btn" onclick="exportSingleDay(${row.id})" ${!isAlert ? 'disabled' : ''}>
-                    ${isAlert ? '📅 Export' : 'No Alert'}
-                </button>
-            </td>
-        </tr>`;
-    });
-    document.getElementById('tableContainer').innerHTML = html + "</table>";
+    for (var i = 0; i < rosterData.length; i++) {
+        var row = rosterData[i];
+        var mClass = getMarginClass(row.credit, row.origD60);
+        var marginVal = Math.abs(row.credit - row.origD60);
+        var isAlert = marginVal < 30;
+        html += '<tr>' +
+            '<td class="mono">' + row.date + '</td>' +
+            '<td class="mono">' + row.origSOf + '</td>' +
+            '<td class="duty-col mono">' + formatTime(row.origDuty) + '</td>' +
+            '<td class="mono">' + formatTime(row.credit) + '</td>' +
+            '<td class="mono">' + formatTime(row.origD60) + '</td>' +
+            '<td class="' + mClass + ' mono">' + formatTime(marginVal) + '</td>' +
+            '<td><input type="text" maxlength="4" class="adj-input" id="in-' + row.id + '" oninput="run(' + row.id + ')" placeholder="HHMM"></td>' +
+            '<td id="d100-' + row.id + '" class="mono">-</td>' +
+            '<td id="d60-' + row.id + '" class="mono">-</td>' +
+            '<td id="gr-' + row.id + '" class="extra-gross mono">$0.00</td>' +
+            '<td id="net-' + row.id + '" class="extra-net mono">$0.00</td>' +
+            '<td>' +
+                '<button class="export-btn ' + (isAlert ? '' : 'export-btn-blue') + '" onclick="exportSingleDay(' + row.id + ')">' +
+                    (isAlert ? '📅 Alert' : '📅 Export') +
+                '</button>' +
+            '</td>' +
+        '</tr>';
+    }
+    document.getElementById('tableContainer').innerHTML = html + '</table>';
 }
 
 function run(id) {
-    const row = rosterData.find(r => r.id === id);
-    const val = document.getElementById(`in-${id}`).value;
-    const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-    const tax = (parseFloat(document.getElementById('taxRate').value) || 0) / 100;
+    var row = null;
+    for (var i = 0; i < rosterData.length; i++) {
+        if (rosterData[i].id === id) {
+            row = rosterData[i];
+            break;
+        }
+    }
+    
+    var val = document.getElementById('in-' + id).value;
+    var rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+    var tax = (parseFloat(document.getElementById('taxRate').value) || 0) / 100;
 
     if (val.length === 4) {
-        const origSOfMins = (parseInt(row.origSOf.substring(0,2)) * 60) + parseInt(row.origSOf.substring(2));
-        let newSOfMins = (parseInt(val.substring(0,2)) * 60) + parseInt(val.substring(2));
+        var origSOfMins = (parseInt(row.origSOf.substring(0,2)) * 60) + parseInt(row.origSOf.substring(2));
+        var newSOfMins = (parseInt(val.substring(0,2)) * 60) + parseInt(val.substring(2));
         if (newSOfMins < origSOfMins - 600) newSOfMins += 1440; 
         
-        const delta = newSOfMins - origSOfMins;
-        const newTotalDuty = row.origDuty + delta;
-        const newD60 = newTotalDuty * 0.6;
+        var delta = newSOfMins - origSOfMins;
+        var newTotalDuty = row.origDuty + delta;
+        var newD60 = newTotalDuty * 0.6;
         
-        const baselinePay = Math.max(row.credit, row.origD60);
-        const simulatedPay = Math.max(row.credit, newD60);
-        const diff = Math.max(0, simulatedPay - baselinePay);
+        var baselinePay = Math.max(row.credit, row.origD60);
+        var simulatedPay = Math.max(row.credit, newD60);
+        var diff = Math.max(0, simulatedPay - baselinePay);
         
-        const gross = (diff / 60) * rate;
+        var gross = (diff / 60) * rate;
         
-        const marginEl = document.getElementById(`in-${id}`).parentElement.parentElement.cells[5];
-        marginEl.className = `${getMarginClass(row.credit, newD60)} mono`;
+        var marginEl = document.getElementById('in-' + id).parentElement.parentElement.cells[5];
+        marginEl.className = getMarginClass(row.credit, newD60) + ' mono';
         marginEl.innerText = formatTime(Math.abs(row.credit - newD60));
 
-        document.getElementById(`d100-${id}`).innerText = formatTime(newTotalDuty);
-        document.getElementById(`d60-${id}`).innerText = formatTime(newD60);
-        document.getElementById(`gr-${id}`).innerText = "$" + gross.toFixed(2);
-        document.getElementById(`net-${id}`).innerText = "$" + (gross * (1 - tax)).toFixed(2);
+        document.getElementById('d100-' + id).innerText = formatTime(newTotalDuty);
+        document.getElementById('d60-' + id).innerText = formatTime(newD60);
+        document.getElementById('gr-' + id).innerText = "$" + gross.toFixed(2);
+        document.getElementById('net-' + id).innerText = "$" + (gross * (1 - tax)).toFixed(2);
     }
 }
 
 function updateAll() { 
-    rosterData.forEach(r => run(r.id)); 
+    for (var i = 0; i < rosterData.length; i++) {
+        run(rosterData[i].id);
+    }
 }
 
 function parseDate(row) {
@@ -444,73 +503,78 @@ function parseDate(row) {
         return null;
     }
     
-    const month = detectedMonth;
-    const year = detectedYear;
-    const day = parseInt(row.day);
+    var month = detectedMonth;
+    var year = detectedYear;
+    var day = parseInt(row.day);
     
-    // Apply month offset for duties that span into the next month
-    const actualMonth = month + row.actualMonthOffset;
-    const actualYear = actualMonth > 12 ? year + 1 : year;
-    const adjustedMonth = actualMonth > 12 ? actualMonth - 12 : actualMonth;
+    var actualMonth = month + row.actualMonthOffset;
+    var actualYear = actualMonth > 12 ? year + 1 : year;
+    var adjustedMonth = actualMonth > 12 ? actualMonth - 12 : actualMonth;
     
-    const date = new Date(actualYear, adjustedMonth - 1, day);
+    var date = new Date(actualYear, adjustedMonth - 1, day);
     
     console.log('Parsed date:', row.date, 'Month offset:', row.actualMonthOffset, '→', date.toDateString());
     return date;
 }
 
-function createCalendarEvent(row) {
-    const marginMins = Math.abs(row.credit - row.origD60);
-    const dutyDate = parseDate(row);
+function createCalendarEvent(row, marginMins) {
+    var dutyDate = parseDate(row);
     
     if (!dutyDate) {
         return null;
     }
     
-    const title = `⚠️ DPC60 Alert: ${formatTime(marginMins)} margin`;
-    const description = `DUTY DATE: ${row.date}%0A` +
-                      `Scheduled Sign-Off: ${row.origSOf}%0A` +
-                      `Duty Time: ${formatTime(row.origDuty)}%0A` +
-                      `Credit Hours: ${formatTime(row.credit)}%0A` +
-                      `.6 Duty: ${formatTime(row.origD60)}%0A` +
-                      `MARGIN: ${formatTime(marginMins)}%0A%0A` +
-                      `⚠️ This duty has less than 30 minutes margin between credit hours and DPC60. ` +
-                      `Monitor for any delays or extensions that could trigger credit hour payment.`;
+    var isAlert = marginMins < 30;
+    var title = isAlert 
+        ? '⚠️ DPC60 Alert: ' + formatTime(marginMins) + ' margin'
+        : 'DPC60 Margin: ' + formatTime(marginMins);
     
-    const startDate = dutyDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const endDate = new Date(dutyDate.getTime() + 30*60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    var description = 'DUTY DATE: ' + row.date + '%0A' +
+                      'Scheduled Sign-Off: ' + row.origSOf + '%0A' +
+                      'Duty Time: ' + formatTime(row.origDuty) + '%0A' +
+                      'Credit Hours: ' + formatTime(row.credit) + '%0A' +
+                      '.6 Duty: ' + formatTime(row.origD60) + '%0A' +
+                      'MARGIN: ' + formatTime(marginMins) + '%0A%0A' +
+                      (isAlert 
+                        ? '⚠️ This duty has less than 30 minutes margin between credit hours and DPC60. Monitor for any delays or extensions that could trigger credit hour payment.'
+                        : 'This duty has ' + formatTime(marginMins) + ' margin between credit hours and DPC60.');
     
-    const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-                  `&text=${encodeURIComponent(title)}` +
-                  `&dates=${startDate}/${endDate}` +
-                  `&details=${description}` +
-                  `&location=DPC60%20Roster%20Analyser`;
+    var startDate = dutyDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    var endDate = new Date(dutyDate.getTime() + 30*60000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    
+    var calUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+                  '&text=' + encodeURIComponent(title) +
+                  '&dates=' + startDate + '/' + endDate +
+                  '&details=' + description +
+                  '&location=DPC60%20Roster%20Analyser';
     
     return calUrl;
 }
 
 function exportSingleDay(id) {
-    const row = rosterData.find(r => r.id === id);
+    var row = null;
+    for (var i = 0; i < rosterData.length; i++) {
+        if (rosterData[i].id === id) {
+            row = rosterData[i];
+            break;
+        }
+    }
+    
     if (!row) {
         console.error('Row not found for id:', id);
         alert('Error: Could not find duty data.');
         return;
     }
     
-    const marginMins = Math.abs(row.credit - row.origD60);
+    var marginMins = Math.abs(row.credit - row.origD60);
     console.log('Exporting duty:', row.date, 'Margin:', formatTime(marginMins));
     
-    if (marginMins >= 30) {
-        alert('This duty has a margin of 30 minutes or more. No alert needed.');
-        return;
-    }
-    
     try {
-        const calUrl = createCalendarEvent(row);
+        var calUrl = createCalendarEvent(row, marginMins);
         if (!calUrl) return;
         
         console.log('Opening calendar URL:', calUrl);
-        const newWindow = window.open(calUrl, '_blank');
+        var newWindow = window.open(calUrl, '_blank');
         
         if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
             alert('Pop-up blocked! Please allow pop-ups for this site and try again.');
@@ -527,34 +591,85 @@ function exportToCalendar() {
         return;
     }
     
-    const alertDuties = rosterData.filter(row => {
-        const marginMins = Math.abs(row.credit - row.origD60);
-        return marginMins < 30;
-    });
-    
-    if (alertDuties.length === 0) {
-        alert('No duties found with margin less than 30 minutes.');
-        return;
-    }
-    
-    console.log(`Exporting ${alertDuties.length} duties with margins < 30 minutes`);
+    console.log('Exporting all ' + rosterData.length + ' duties to calendar');
     
     try {
-        alertDuties.forEach((row, index) => {
-            const calUrl = createCalendarEvent(row);
+        for (var i = 0; i < rosterData.length; i++) {
+            var row = rosterData[i];
+            var marginMins = Math.abs(row.credit - row.origD60);
+            var calUrl = createCalendarEvent(row, marginMins);
             if (calUrl) {
-                console.log(`Opening calendar ${index + 1}/${alertDuties.length}:`, row.date);
+                console.log('Opening calendar ' + (i + 1) + '/' + rosterData.length + ':', row.date);
                 window.open(calUrl, '_blank');
             }
-        });
+        }
         
-        alert(`Opening ${alertDuties.length} calendar event(s). If you don't see new tabs, please allow pop-ups for this site.`);
+        alert('Opening ' + rosterData.length + ' calendar event(s). If you don\'t see new tabs, please allow pop-ups for this site.');
     } catch (error) {
         console.error('Error during bulk export:', error);
         alert('Error exporting to calendar. Check console for details.');
     }
 }
-</script>
 
-</body>
-</html>
+function exportToEmail() {
+    if (rosterData.length === 0) {
+        alert('Please process a roster first!');
+        return;
+    }
+    
+    var rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+    var tax = (parseFloat(document.getElementById('taxRate').value) || 0) / 100;
+    var bidPeriod = document.getElementById('bidPeriod').value;
+    
+    var emailBody = 'DPC60 ROSTER ANALYSIS REPORT%0D%0A';
+    emailBody += '======================================%0D%0A%0D%0A';
+    
+    if (bidPeriod && bidPeriod !== 'Not detected') {
+        emailBody += 'BID PERIOD: ' + bidPeriod + '%0D%0A';
+    }
+    emailBody += 'HOURLY RATE: $' + rate + '%0D%0A';
+    emailBody += 'TAX RATE: ' + (tax * 100).toFixed(0) + '%%0D%0A%0D%0A';
+    
+    var alertDuties = [];
+    for (var i = 0; i < rosterData.length; i++) {
+        var marginMins = Math.abs(rosterData[i].credit - rosterData[i].origD60);
+        if (marginMins < 30) {
+            alertDuties.push(rosterData[i]);
+        }
+    }
+    
+    emailBody += 'SUMMARY:%0D%0A';
+    emailBody += '---------%0D%0A';
+    emailBody += 'Total Duties: ' + rosterData.length + '%0D%0A';
+    emailBody += 'Margin Alerts (<30min): ' + alertDuties.length + '%0D%0A%0D%0A';
+    
+    if (alertDuties.length > 0) {
+        emailBody += 'DUTIES WITH MARGIN ALERTS:%0D%0A';
+        emailBody += '======================================%0D%0A';
+        for (var j = 0; j < alertDuties.length; j++) {
+            var row = alertDuties[j];
+            var marginMins = Math.abs(row.credit - row.origD60);
+            var dutyDate = parseDate(row);
+            var dateStr = dutyDate ? dutyDate.toDateString() : row.date;
+            
+            emailBody += '%0D%0ADATE: ' + dateStr + '%0D%0A';
+            emailBody += '  Sign-Off: ' + row.origSOf + '%0D%0A';
+            emailBody += '  Duty: ' + formatTime(row.origDuty) + ' | Credit: ' + formatTime(row.credit) + '%0D%0A';
+            emailBody += '  .6 Duty: ' + formatTime(row.origD60) + ' | MARGIN: ' + formatTime(marginMins) + '%0D%0A';
+        }
+        emailBody += '%0D%0A';
+    }
+    
+    emailBody += '%0D%0AFULL ROSTER DETAILS:%0D%0A';
+    emailBody += '======================================%0D%0A';
+    
+    for (var k = 0; k < rosterData.length; k++) {
+        var row = rosterData[k];
+        var marginMins = Math.abs(row.credit - row.origD60);
+        var marginStatus = marginMins < 30 ? 'ALERT' : marginMins <= 0.5 ? 'GREEN' : 'AMBER';
+        var dutyDate = parseDate(row);
+        var dateStr = dutyDate ? dutyDate.toDateString() : row.date;
+        
+        emailBody += '%0D%0A' + dateStr + ' [' + marginStatus + ']%0D%0A';
+        emailBody += '  S-Off: ' + row.origSOf + ' | Duty: ' + formatTime(row.origDuty) + ' | Credit: ' + formatTime(row.credit) + '%0D%0A';
+        emailBody += '  .6 Duty
