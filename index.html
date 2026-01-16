@@ -412,16 +412,32 @@ function createCalendarEvent(row) {
 
 function exportSingleDay(id) {
     const row = rosterData.find(r => r.id === id);
-    if (!row) return;
+    if (!row) {
+        console.error('Row not found for id:', id);
+        alert('Error: Could not find duty data.');
+        return;
+    }
     
     const marginMins = Math.abs(row.credit - row.origD60);
+    console.log('Exporting duty:', row.date, 'Margin:', formatTime(marginMins));
+    
     if (marginMins >= 30) {
         alert('This duty has a margin of 30 minutes or more. No alert needed.');
         return;
     }
     
-    const calUrl = createCalendarEvent(row);
-    window.open(calUrl, '_blank');
+    try {
+        const calUrl = createCalendarEvent(row);
+        console.log('Opening calendar URL:', calUrl);
+        const newWindow = window.open(calUrl, '_blank');
+        
+        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+            alert('Pop-up blocked! Please allow pop-ups for this site and try again.');
+        }
+    } catch (error) {
+        console.error('Error opening calendar:', error);
+        alert('Error opening calendar. Check console for details.');
+    }
 }
 
 function exportToCalendar() {
@@ -440,12 +456,24 @@ function exportToCalendar() {
         return;
     }
     
-    alertDuties.forEach(row => {
-        const calUrl = createCalendarEvent(row);
-        window.open(calUrl, '_blank');
-    });
+    console.log(`Exporting ${alertDuties.length} duties with margins < 30 minutes`);
     
-    alert(`Opening ${alertDuties.length} calendar event(s) for duties with less than 30 minutes margin.`);
+    try {
+        alertDuties.forEach((row, index) => {
+            const calUrl = createCalendarEvent(row);
+            console.log(`Opening calendar ${index + 1}/${alertDuties.length}:`, row.date);
+            const newWindow = window.open(calUrl, '_blank');
+            
+            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                console.warn('Pop-up blocked for duty:', row.date);
+            }
+        });
+        
+        alert(`Opening ${alertDuties.length} calendar event(s). If you don't see new tabs, please allow pop-ups for this site.`);
+    } catch (error) {
+        console.error('Error during bulk export:', error);
+        alert('Error exporting to calendar. Check console for details.');
+    }
 }
 </script>
 
