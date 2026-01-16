@@ -12,7 +12,9 @@
             --accent-red: #e21b22;
             --glass-border: rgba(0, 0, 0, 0.08);
             --text-secondary: #86868b;
+            --success-green: #16a34a;
         }
+
         body { 
             font-family: 'Inter', -apple-system, sans-serif; 
             padding: 40px 20px; 
@@ -20,6 +22,7 @@
             color: var(--aviation-black);
             -webkit-font-smoothing: antialiased;
         }
+
         .card { 
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(20px);
@@ -30,22 +33,25 @@
             margin: auto; 
             border: 1px solid var(--glass-border);
         }
+
         h2 { 
-            color: #000000; 
             font-weight: 700;
             letter-spacing: -0.5px;
-            margin-top: 0; 
-            margin-bottom: 30px;
+            margin: 0 0 30px 0;
             font-size: 28px;
             text-align: center;
         }
+
         .controls { 
             display: flex; 
-            gap: 30px; 
+            gap: 20px; 
             justify-content: center;
             margin-bottom: 30px;
+            flex-wrap: wrap;
         }
+
         .input-group { display: flex; flex-direction: column; gap: 8px; }
+
         label { 
             font-size: 11px; 
             text-transform: uppercase; 
@@ -53,6 +59,7 @@
             color: var(--text-secondary);
             letter-spacing: 0.5px;
         }
+
         input[type="number"], input[type="text"] { 
             padding: 10px 14px; 
             border: 1px solid #d2d2d7; 
@@ -61,449 +68,300 @@
             background: white;
             transition: border 0.2s ease;
         }
-        input:focus { outline: none; border-color: var(--aviation-black); }
+
         textarea { 
             width: 100%; 
             height: 120px; 
             padding: 15px; 
             border: 1px solid #d2d2d7; 
             border-radius: 12px; 
-            font-family: 'SF Mono', 'Courier New', monospace; 
+            font-family: 'SF Mono', monospace; 
             font-size: 13px;
             box-sizing: border-box;
             background: rgba(255,255,255,0.5);
             resize: vertical;
-            line-height: 1.5;
         }
-        .instructions-panel {
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
             margin-top: 20px;
-            padding: 15px;
-            border-radius: 12px;
-            background: #fff;
-            border: 1px solid #e5e5e7;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            flex-wrap: wrap;
         }
-        .instruction-item {
-            font-size: 12px;
-            line-height: 1.5;
-            color: #424245;
-        }
-        .marker {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-            margin-right: 6px;
-        }
+
         button { 
             background: var(--aviation-black); 
             color: white; 
             border: none; 
-            padding: 14px 28px; 
+            padding: 12px 24px; 
             border-radius: 10px; 
             cursor: pointer; 
             font-weight: 600; 
-            font-size: 15px; 
-            margin-top: 20px;
             transition: all 0.2s ease;
-            width: auto;
-            display: inline-block;
-            margin-left: 10px;
-            margin-right: 10px;
         }
-        button:hover { background: #333; transform: translateY(-1px); }
-        .button-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .btn-secondary {
-            background: var(--accent-red);
-        }
-        .btn-secondary:hover {
-            background: #c91a20;
-        }
-        table { 
-            width: 100%; 
-            border-collapse: separate; 
-            border-spacing: 0;
-            margin-top: 40px; 
-        }
+
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .btn-secondary { background: var(--accent-red); }
+        .btn-outline { background: transparent; color: var(--aviation-black); border: 1px solid var(--aviation-black); }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 30px; }
         th { 
             color: var(--text-secondary); 
             text-transform: uppercase; 
             font-size: 10px; 
-            font-weight: 700;
-            letter-spacing: 1px;
-            padding: 12px;
-            border-bottom: 1px solid #d2d2d7;
-            vertical-align: bottom;
+            padding: 12px; 
+            border-bottom: 1px solid #d2d2d7; 
         }
-        td { 
-            padding: 16px 12px; 
-            border-bottom: 1px solid #f2f2f2;
-            font-size: 13px;
-            color: #1d1d1f;
-        }
-        .export-btn {
-            background: var(--accent-red);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .export-btn:hover {
-            background: #c91a20;
-            transform: translateY(-1px);
-        }
-        .export-btn-blue {
-            background: #1565c0;
-        }
-        .export-btn-blue:hover {
-            background: #0d47a1;
-            transform: translateY(-1px);
-        }
-        .mono { font-family: 'SF Mono', 'Roboto Mono', monospace; font-weight: 500; }
-        .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; } 
+        td { padding: 14px 12px; border-bottom: 1px solid #f2f2f2; font-size: 13px; }
+
+        .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; font-weight: 600; } 
         .margin-blue { background-color: #e3f2fd; color: #1565c0; border-radius: 4px; }  
         .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; } 
-        .extra-gross { font-weight: 700; color: #000; } 
-        .extra-net { color: #16a34a; font-weight: 700; }   
-        .adj-input { 
-            width: 70px; 
-            padding: 6px; 
-            border: 1.5px solid var(--accent-red) !important; 
-            border-radius: 6px; 
-            text-align: center;
-            font-family: monospace;
-            font-weight: bold;
-        }
-        .duty-col { color: var(--text-secondary); }
+
+        .extra-net { color: var(--success-green); font-weight: 700; }
+        .adj-input { width: 65px; padding: 5px; border: 1px solid var(--accent-red); border-radius: 4px; text-align: center; }
+        .mono { font-family: 'SF Mono', monospace; }
     </style>
 </head>
 <body>
+
 <div class="card">
     <h2>DPC60 Roster Analyser</h2>
+    
     <div class="controls">
         <div class="input-group">
-            <label>Hourly Rate</label>
-            <input type="number" id="hourlyRate" value="353" oninput="updateAll()">
+            <label>Hourly Rate ($)</label>
+            <input type="number" id="hourlyRate" value="353" oninput="updateAllCalculations()">
         </div>
         <div class="input-group">
             <label>Tax Rate %</label>
-            <input type="number" id="taxRate" value="47" oninput="updateAll()">
+            <input type="number" id="taxRate" value="47" oninput="updateAllCalculations()">
         </div>
         <div class="input-group">
             <label>Bid Period</label>
-            <input type="text" id="bidPeriod" value="" readonly style="background: #f0f0f0;">
+            <input type="text" id="bidPeriod" readonly style="background: #eee; color: #666;">
         </div>
     </div>
-    <textarea id="rosterInput" placeholder="Use the send roster function in WebCis, then copy/paste all into here"></textarea>
-    <div class="instructions-panel">
-        <div class="instruction-item">
-            <span class="marker" style="background: #e8f5e9; border: 1px solid #2e7d32;"></span>
-            <strong>Green:</strong> Pattern is built to DPC60 or a past pattern has been increased to DPC60.
-        </div>
-        <div class="instruction-item">
-            <span class="marker" style="background: #fff8e1; border: 1px solid #ef6c00;"></span>
-            <strong>Amber:</strong> Credit Hours paid unless margin is extended (eg late sign off due disruption).
-        </div>
-    </div>
+
+    <textarea id="rosterInput" placeholder="Paste WebCis roster data here..."></textarea>
+
     <div class="button-container">
         <button onclick="processRoster()">Process Roster</button>
-        <button class="btn-secondary" onclick="exportToCalendar()">Export ALL Margins to Calendar</button>
+        <button class="btn-outline" onclick="clearRoster()">Clear</button>
+        <button class="btn-secondary" onclick="exportToCalendar()">Export All to Calendar</button>
         <button class="btn-secondary" onclick="exportToEmail()">📧 Email Results</button>
     </div>
+
     <div id="tableContainer"></div>
 </div>
+
 <script>
-var rosterData = [];
-var detectedMonth = null;
-var detectedYear = null;
-var bidPeriodStart = null;
-var bidPeriodEnd = null;
+    // State Management
+    const state = {
+        rosterData: [],
+        detectedMonth: null,
+        detectedYear: null,
+        bidPeriodInfo: ""
+    };
 
-function parseTime(s) {
-    if (!s || s.indexOf(':') === -1) return 0;
-    var parts = s.split(':');
-    return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
-}
-
-function formatTime(m) {
-    var mins = Math.max(0, Math.round(m));
-    var h = Math.floor(mins / 60);
-    var min = mins % 60;
-    return h + ':' + (min < 10 ? '0' : '') + min;
-}
-
-function getMarginClass(credit, d60) {
-    var diff = credit - d60;
-    if (Math.abs(diff) <= 0.5) return 'margin-green';
-    if (credit < d60) return 'margin-blue';
-    return 'margin-amber';
-}
-
-function processRoster() {
-    var text = document.getElementById('rosterInput').value;
-    var lines = text.split('\n');
-    rosterData = [];
-    detectedMonth = null;
-    detectedYear = null;
-    bidPeriodStart = null;
-    bidPeriodEnd = null;
-    
-    var monthYearRegex = /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/i;
-    var monthNames = {
+    const monthAbbrMap = {
+        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+        'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
         'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
         'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
     };
-    var patternDateRegex = /(\d+)\s+DATED\s+(\d{1,2})([A-Z][a-z]{2})(\d{2})/i;
-    var bidPeriodRegex = /Bid Period\s+(\d+)/i;
-    
-    for (var i = 0; i < lines.length; i++) {
-        var line = lines[i];
-        
-        var bidMatch = line.match(bidPeriodRegex);
-        if (bidMatch) {
-            bidPeriodNumber = bidMatch[1];
-        }
-        
-        var monthMatch = line.match(monthYearRegex);
-        if (monthMatch) {
-            var monthName = monthMatch[1].toLowerCase();
-            if (monthNames[monthName]) {
-                detectedMonth = monthNames[monthName];
-                detectedYear = parseInt(monthMatch[2]);
-            }
-        }
-        
-        var patternMatch = line.match(patternDateRegex);
-        if (patternMatch && !detectedMonth) {
-            var monthAbbr = patternMatch[3].toLowerCase();
-            var yearShort = patternMatch[4];
-            var fullYear = parseInt('20' + yearShort);
-            var monthAbbrMap = {
-                'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
-                'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
-            };
-            if (monthAbbrMap[monthAbbr]) {
-                detectedMonth = monthAbbrMap[monthAbbr];
-                detectedYear = fullYear;
-            }
-        }
+
+    // Utilities
+    const parseTime = (s) => {
+        if (!s || !s.includes(':')) return 0;
+        const [h, m] = s.split(':').map(Number);
+        return (h * 60) + m;
+    };
+
+    const formatTime = (m) => {
+        const mins = Math.max(0, Math.round(m));
+        return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}`;
+    };
+
+    const getMarginClass = (credit, d60) => {
+        const diff = credit - d60;
+        if (Math.abs(diff) <= 0.5) return 'margin-green';
+        return credit < d60 ? 'margin-blue' : 'margin-amber';
+    };
+
+    function clearRoster() {
+        document.getElementById('rosterInput').value = '';
+        document.getElementById('tableContainer').innerHTML = '';
+        document.getElementById('bidPeriod').value = '';
+        state.rosterData = [];
     }
-    
-    var lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
-    var previousDay = null;
-    var firstDutyDate = null;
-    var lastDutyDate = null;
-    var bidPeriodNumber = null;
-    
-    for (var j = 0; j < lines.length; j++) {
-        var match = lines[j].match(lineRegex);
-        if (match) {
-            var currentDay = parseInt(match[1]);
-            var monthOffset = 0;
-            if (previousDay !== null && currentDay < previousDay) {
-                monthOffset = 1;
-            }
-            var dutyMins = parseTime(match[5]);
-            var credMins = parseTime(match[6]);
-            var d60 = dutyMins * 0.6;
-            rosterData.push({
-                id: j, 
-                day: match[1],
-                dayName: match[2],
-                date: match[1] + ' ' + match[2],
-                monthOffset: monthOffset,
-                sOn: match[3], 
-                origSOf: match[4],
-                origDuty: dutyMins, 
-                credit: credMins, 
-                origD60: d60
-            });
+
+    function processRoster() {
+        const text = document.getElementById('rosterInput').value;
+        const lines = text.split('\n');
+        
+        state.rosterData = [];
+        let previousDay = null;
+
+        // 1. Detect Month/Year and Bid Period
+        lines.forEach(line => {
+            const bpMatch = line.match(/Bid Period\s+(\d+)/i);
+            const dateMatch = line.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/i);
             
-            if (!firstDutyDate) {
-                firstDutyDate = match[1] + ' ' + match[2];
+            if (bpMatch) state.bidPeriodInfo = `BP ${bpMatch[1]}`;
+            if (dateMatch) {
+                state.detectedMonth = monthAbbrMap[dateMatch[1].toLowerCase()];
+                state.detectedYear = parseInt(dateMatch[2]);
             }
-            lastDutyDate = match[1] + ' ' + match[2];
-            
-            previousDay = currentDay;
+        });
+
+        // 2. Parse Rows
+        const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
+        let cumulativeOffset = 0;
+
+        lines.forEach((line, idx) => {
+            const match = line.match(lineRegex);
+            if (match) {
+                const currentDay = parseInt(match[1]);
+                if (previousDay !== null && currentDay < previousDay) cumulativeOffset++;
+
+                const dutyMins = parseTime(match[5]);
+                const credMins = parseTime(match[6]);
+
+                state.rosterData.push({
+                    index: state.rosterData.length,
+                    day: match[1],
+                    dayName: match[2],
+                    dateStr: `${match[1]} ${match[2]}`,
+                    actualMonthOffset: cumulativeOffset,
+                    sOn: match[3],
+                    origSOf: match[4],
+                    origDuty: dutyMins,
+                    credit: credMins,
+                    origD60: dutyMins * 0.6
+                });
+                previousDay = currentDay;
+            }
+        });
+
+        if (state.rosterData.length > 0) {
+            const start = state.rosterData[0].dateStr;
+            const end = state.rosterData[state.rosterData.length - 1].dateStr;
+            document.getElementById('bidPeriod').value = `${state.bidPeriodInfo}: ${start} - ${end}`;
+            renderTable();
         }
     }
-    
-    var cumulativeOffset = 0;
-    for (var k = 0; k < rosterData.length; k++) {
-        if (rosterData[k].monthOffset > 0) {
-            cumulativeOffset += rosterData[k].monthOffset;
+
+    function renderTable() {
+        let html = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th><th>Roster S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
+                        <th>New S-Off</th><th>New .6</th><th>Extra Gross</th><th>Net (Tax)</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+        state.rosterData.forEach((row, i) => {
+            const marginVal = Math.abs(row.credit - row.origD60);
+            const mClass = getMarginClass(row.credit, row.origD60);
+
+            html += `
+                <tr>
+                    <td class="mono">${row.dateStr}</td>
+                    <td class="mono">${row.origSOf}</td>
+                    <td class="mono" style="color:#86868b">${formatTime(row.origDuty)}</td>
+                    <td class="mono">${formatTime(row.credit)}</td>
+                    <td class="mono">${formatTime(row.origD60)}</td>
+                    <td class="mono ${mClass}">${formatTime(marginVal)}</td>
+                    <td><input type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
+                    <td id="newD60-${i}" class="mono">-</td>
+                    <td id="gross-${i}" class="mono" style="font-weight:700">$0.00</td>
+                    <td id="net-${i}" class="mono extra-net">$0.00</td>
+                    <td><button class="export-btn" style="padding:5px 10px; font-size:10px" onclick="exportSingleDay(${i})">📅 Export</button></td>
+                </tr>`;
+        });
+
+        document.getElementById('tableContainer').innerHTML = html + `</tbody></table>`;
+    }
+
+    function calculateAdjustment(index, newVal) {
+        if (newVal.length !== 4) return;
+        
+        const row = state.rosterData[index];
+        const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+        const taxMult = 1 - ((parseFloat(document.getElementById('taxRate').value) || 0) / 100);
+
+        const origMins = (parseInt(row.origSOf.slice(0,2)) * 60) + parseInt(row.origSOf.slice(2));
+        let newMins = (parseInt(newVal.slice(0,2)) * 60) + parseInt(newVal.slice(2));
+        
+        if (newMins < origMins - 600) newMins += 1440; // Handle midnight wrap
+
+        const newTotalDuty = row.origDuty + (newMins - origMins);
+        const newD60 = newTotalDuty * 0.6;
+        
+        const baselinePay = Math.max(row.credit, row.origD60);
+        const simulatedPay = Math.max(row.credit, newD60);
+        const diffMins = Math.max(0, simulatedPay - baselinePay);
+        
+        const gross = (diffMins / 60) * rate;
+
+        document.getElementById(`newD60-${index}`).innerText = formatTime(newD60);
+        document.getElementById(`gross-${index}`).innerText = `$${gross.toFixed(2)}`;
+        document.getElementById(`net-${index}`).innerText = `$${(gross * taxMult).toFixed(2)}`;
+    }
+
+    function updateAllCalculations() {
+        state.rosterData.forEach((_, i) => {
+            const input = document.querySelectorAll('.adj-input')[i];
+            if (input && input.value) calculateAdjustment(i, input.value);
+        });
+    }
+
+    function getFullDate(row) {
+        if (!state.detectedMonth) return null;
+        let m = state.detectedMonth + row.actualMonthOffset;
+        let y = state.detectedYear;
+        while (m > 12) { m -= 12; y++; }
+        return new Date(y, m - 1, parseInt(row.day));
+    }
+
+    function exportSingleDay(index) {
+        const row = state.rosterData[index];
+        const date = getFullDate(row);
+        if (!date) return alert("Date context lost. Please re-paste roster.");
+
+        const margin = formatTime(Math.abs(row.credit - row.origD60));
+        const title = `DPC60 Margin: ${margin}`;
+        const desc = `Duty: ${formatTime(row.origDuty)} | Credit: ${formatTime(row.credit)}`;
+        
+        const start = date.toISOString().replace(/-|:|\.\d+/g, "");
+        const end = new Date(date.getTime() + 30*60000).toISOString().replace(/-|:|\.\d+/g, "");
+
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(desc)}`;
+        window.open(url, '_blank');
+    }
+
+    function exportToCalendar() {
+        if (!state.rosterData.length) return alert("No data to export.");
+        if (state.rosterData.length > 5) {
+            if (!confirm("This will attempt to open multiple tabs. Your browser might block them. Continue?")) return;
         }
-        rosterData[k].actualMonthOffset = cumulativeOffset;
+        state.rosterData.forEach((_, i) => exportSingleDay(i));
     }
-    
-    if (rosterData.length > 0) {
-        if (bidPeriodNumber && firstDutyDate && lastDutyDate) {
-            bidPeriodStart = firstDutyDate;
-            bidPeriodEnd = lastDutyDate;
-            document.getElementById('bidPeriod').value = 'BP ' + bidPeriodNumber + ': ' + bidPeriodStart + ' - ' + bidPeriodEnd;
-        } else if (firstDutyDate && lastDutyDate) {
-            document.getElementById('bidPeriod').value = firstDutyDate + ' - ' + lastDutyDate;
-        } else {
-            document.getElementById('bidPeriod').value = 'Not detected';
-        }
-    }
-    renderTable();
-}
 
-function renderTable() {
-    var html = '<table><tr><th>Date</th><th>Roster S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th><th>New S-Off</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Export</th></tr>';
-    for (var i = 0; i < rosterData.length; i++) {
-        var row = rosterData[i];
-        var mClass = getMarginClass(row.credit, row.origD60);
-        var marginVal = Math.abs(row.credit - row.origD60);
-        var isAlert = marginVal < 30;
-        html += '<tr>';
-        html += '<td class="mono">' + row.date + '</td>';
-        html += '<td class="mono">' + row.origSOf + '</td>';
-        html += '<td class="duty-col mono">' + formatTime(row.origDuty) + '</td>';
-        html += '<td class="mono">' + formatTime(row.credit) + '</td>';
-        html += '<td class="mono">' + formatTime(row.origD60) + '</td>';
-        html += '<td class="' + mClass + ' mono">' + formatTime(marginVal) + '</td>';
-        html += '<td><input type="text" maxlength="4" class="adj-input" id="in-' + row.id + '" oninput="run(' + row.id + ')" placeholder="HHMM"></td>';
-        html += '<td id="d100-' + row.id + '" class="mono">-</td>';
-        html += '<td id="d60-' + row.id + '" class="mono">-</td>';
-        html += '<td id="gr-' + row.id + '" class="extra-gross mono">$0.00</td>';
-        html += '<td id="net-' + row.id + '" class="extra-net mono">$0.00</td>';
-        html += '<td><button class="export-btn ' + (isAlert ? '' : 'export-btn-blue') + '" onclick="exportSingleDay(' + row.id + ')">' + (isAlert ? '📅 Alert' : '📅 Export') + '</button></td>';
-        html += '</tr>';
+    function exportToEmail() {
+        if (!state.rosterData.length) return;
+        let body = `DPC60 ANALYSIS\n${document.getElementById('bidPeriod').value}\n\n`;
+        state.rosterData.forEach(r => {
+            body += `${r.dateStr}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`;
+        });
+        window.location.href = `mailto:?subject=Roster Analysis&body=${encodeURIComponent(body)}`;
     }
-    document.getElementById('tableContainer').innerHTML = html + '</table>';
-}
-
-function run(id) {
-    var row = null;
-    for (var i = 0; i < rosterData.length; i++) {
-        if (rosterData[i].id === id) {
-            row = rosterData[i];
-            break;
-        }
-    }
-    var val = document.getElementById('in-' + id).value;
-    var rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-    var tax = (parseFloat(document.getElementById('taxRate').value) || 0) / 100;
-    if (val.length === 4) {
-        var origSOfMins = (parseInt(row.origSOf.substring(0,2)) * 60) + parseInt(row.origSOf.substring(2));
-        var newSOfMins = (parseInt(val.substring(0,2)) * 60) + parseInt(val.substring(2));
-        if (newSOfMins < origSOfMins - 600) newSOfMins += 1440; 
-        var delta = newSOfMins - origSOfMins;
-        var newTotalDuty = row.origDuty + delta;
-        var newD60 = newTotalDuty * 0.6;
-        var baselinePay = Math.max(row.credit, row.origD60);
-        var simulatedPay = Math.max(row.credit, newD60);
-        var diff = Math.max(0, simulatedPay - baselinePay);
-        var gross = (diff / 60) * rate;
-        var marginEl = document.getElementById('in-' + id).parentElement.parentElement.cells[5];
-        marginEl.className = getMarginClass(row.credit, newD60) + ' mono';
-        marginEl.innerText = formatTime(Math.abs(row.credit - newD60));
-        document.getElementById('d100-' + id).innerText = formatTime(newTotalDuty);
-        document.getElementById('d60-' + id).innerText = formatTime(newD60);
-        document.getElementById('gr-' + id).innerText = '$' + gross.toFixed(2);
-        document.getElementById('net-' + id).innerText = '$' + (gross * (1 - tax)).toFixed(2);
-    }
-}
-
-function updateAll() { 
-    for (var i = 0; i < rosterData.length; i++) {
-        run(rosterData[i].id);
-    }
-}
-
-function parseDate(row) {
-    if (!detectedMonth || !detectedYear) {
-        alert('Could not detect the roster month/year. Please ensure you copied the full roster.');
-        return null;
-    }
-    var month = detectedMonth;
-    var year = detectedYear;
-    var day = parseInt(row.day);
-    var actualMonth = month + row.actualMonthOffset;
-    var actualYear = actualMonth > 12 ? year + 1 : year;
-    var adjustedMonth = actualMonth > 12 ? actualMonth - 12 : actualMonth;
-    return new Date(actualYear, adjustedMonth - 1, day);
-}
-
-function createCalendarEvent(row, marginMins) {
-    var dutyDate = parseDate(row);
-    if (!dutyDate) return null;
-    var isAlert = marginMins < 30;
-    var title = isAlert ? 'DPC60 Alert: ' + formatTime(marginMins) + ' margin' : 'DPC60 Margin: ' + formatTime(marginMins);
-    var description = 'DUTY DATE: ' + row.date + '%0ADuty: ' + formatTime(row.origDuty) + '%0ACredit: ' + formatTime(row.credit) + '%0AMargin: ' + formatTime(marginMins);
-    var startDate = dutyDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    var endDate = new Date(dutyDate.getTime() + 1800000).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(title) + '&dates=' + startDate + '/' + endDate + '&details=' + description;
-}
-
-function exportSingleDay(id) {
-    var row = null;
-    for (var i = 0; i < rosterData.length; i++) {
-        if (rosterData[i].id === id) {
-            row = rosterData[i];
-            break;
-        }
-    }
-    if (!row) {
-        alert('Error: Could not find duty data.');
-        return;
-    }
-    var marginMins = Math.abs(row.credit - row.origD60);
-    var calUrl = createCalendarEvent(row, marginMins);
-    if (calUrl) window.open(calUrl, '_blank');
-}
-
-function exportToCalendar() {
-    if (rosterData.length === 0) {
-        alert('Please process a roster first!');
-        return;
-    }
-    for (var i = 0; i < rosterData.length; i++) {
-        var row = rosterData[i];
-        var marginMins = Math.abs(row.credit - row.origD60);
-        var calUrl = createCalendarEvent(row, marginMins);
-        if (calUrl) window.open(calUrl, '_blank');
-    }
-}
-
-function exportToEmail() {
-    if (rosterData.length === 0) {
-        alert('Please process a roster first!');
-        return;
-    }
-    var rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-    var tax = (parseFloat(document.getElementById('taxRate').value) || 0) / 100;
-    var bidPeriod = document.getElementById('bidPeriod').value;
-    var emailBody = 'DPC60 ROSTER ANALYSIS%0D%0A%0D%0A';
-    if (bidPeriod !== 'Not detected') emailBody += 'BID PERIOD: ' + bidPeriod + '%0D%0A';
-    emailBody += 'HOURLY RATE: $' + rate + '%0D%0ATAX RATE: ' + (tax * 100).toFixed(0) + '%%0D%0A%0D%0A';
-    emailBody += 'Total Duties: ' + rosterData.length + '%0D%0A%0D%0A';
-    for (var k = 0; k < rosterData.length; k++) {
-        var row = rosterData[k];
-        var marginMins = Math.abs(row.credit - row.origD60);
-        var dutyDate = parseDate(row);
-        var dateStr = dutyDate ? dutyDate.toDateString() : row.date;
-        emailBody += dateStr + ' - Margin: ' + formatTime(marginMins) + '%0D%0A';
-    }
-    var subject = 'DPC60 Roster Analysis';
-    window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + emailBody;
-}
 </script>
+
 </body>
 </html>
