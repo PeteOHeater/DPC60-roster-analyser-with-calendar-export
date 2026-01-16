@@ -7,39 +7,29 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --apple-bg:#f5f5f7;
-      --aviation-black:#1d1d1f;
-      --accent-red:#e21b22;
-      --glass-border:rgba(0,0,0,0.08);
-      --text-secondary:#86868b;
-      --success-green:#16a34a;
+      --apple-bg:#f5f5f7; --aviation-black:#1d1d1f; --accent-red:#e21b22;
+      --glass-border:rgba(0,0,0,0.08); --text-secondary:#86868b; --success-green:#16a34a;
     }
     body{font-family:'Inter',sans-serif;padding:40px 20px;background:var(--apple-bg);color:var(--aviation-black);-webkit-font-smoothing:antialiased;}
     .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1500px;margin:auto;border:1px solid var(--glass-border);}
     h2{font-weight:700;text-align:center;margin:0 0 26px 0;font-size:28px;}
-
     .controls{display:flex;gap:16px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;}
     .input-group{display:flex;flex-direction:column;gap:8px;min-width:180px;}
     label{font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-secondary);}
     input[type="number"],input[type="text"]{padding:10px 14px;border:1px solid #d2d2d7;border-radius:10px;font-size:14px;background:white;}
-
     textarea{width:100%;height:160px;padding:14px;border:1px solid #d2d2d7;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;box-sizing:border-box;margin-bottom:10px;white-space:pre;}
     .hint{font-size:12px;color:var(--text-secondary);margin:0 0 16px 0;line-height:1.35;}
-
-    .button-container{display:flex;justify-content:center;gap:12px;margin:18px 0 18px 0;flex-wrap:wrap;}
+    .button-container{display:flex;justify-content:center;gap:12px;margin:18px 0;flex-wrap:wrap;}
     button{background:var(--aviation-black);color:white;border:none;padding:12px 22px;border-radius:12px;cursor:pointer;font-weight:600;transition:all .2s ease;}
     button:hover{opacity:.92;transform:translateY(-1px);}
     .btn-secondary{background:var(--accent-red);}
     .btn-outline{background:transparent;color:var(--aviation-black);border:1px solid var(--aviation-black);}
-
     table{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;}
     th{color:var(--text-secondary);text-transform:uppercase;font-size:10px;padding:10px;border-bottom:1px solid #d2d2d7;text-align:left;}
     td{padding:12px 10px;border-bottom:1px solid #f2f2f2;font-size:13px;vertical-align:middle;}
-
     .margin-green{background-color:#e8f5e9;color:#2e7d32;border-radius:6px;font-weight:600;padding:3px 8px;display:inline-block;}
     .margin-blue{background-color:#e3f2fd;color:#1565c0;border-radius:6px;padding:3px 8px;display:inline-block;}
     .margin-amber{background-color:#fff8e1;color:#ef6c00;border-radius:6px;padding:3px 8px;display:inline-block;}
-
     .extra-net{color:var(--success-green);font-weight:700;}
     .adj-input{width:86px;padding:7px 8px;border:2px solid var(--accent-red);border-radius:10px;text-align:center;font-weight:700;}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
@@ -69,8 +59,8 @@
 
     <textarea id="rosterInput" placeholder="Paste the full WebCis roster text here (including the pattern section at the bottom)."></textarea>
     <div class="hint">
-      This version reads the <strong>pattern summary lines</strong> (those containing “Rpt #### Rls #### … Duty … Cred …”).<br>
-      New S-Off format: HHMM (24h). Example: 2315. Invalid times are ignored.
+      Reads the pattern summary lines containing “Rpt #### Rls #### … Duty … Cred …”.<br>
+      New S-Off format: HHMM (24h). Example: 2315.
     </div>
 
     <div class="button-container">
@@ -86,21 +76,13 @@
 <script>
   let state = { rosterData: [], monthAbbr: "", yearFull: "" };
 
-  // ---------- helpers ----------
   const monthMap = {
-    jan: {abbr:"Jan", name:"January", num:1},
-    feb: {abbr:"Feb", name:"February", num:2},
-    mar: {abbr:"Mar", name:"March", num:3},
-    apr: {abbr:"Apr", name:"April", num:4},
-    may: {abbr:"May", name:"May", num:5},
-    jun: {abbr:"Jun", name:"June", num:6},
-    jul: {abbr:"Jul", name:"July", num:7},
-    aug: {abbr:"Aug", name:"August", num:8},
-    sep: {abbr:"Sep", name:"September", num:9},
-    oct: {abbr:"Oct", name:"October", num:10},
-    nov: {abbr:"Nov", name:"November", num:11},
-    dec: {abbr:"Dec", name:"December", num:12}
+    jan:{abbr:"Jan"}, feb:{abbr:"Feb"}, mar:{abbr:"Mar"}, apr:{abbr:"Apr"},
+    may:{abbr:"May"}, jun:{abbr:"Jun"}, jul:{abbr:"Jul"}, aug:{abbr:"Aug"},
+    sep:{abbr:"Sep"}, oct:{abbr:"Oct"}, nov:{abbr:"Nov"}, dec:{abbr:"Dec"}
   };
+
+  const pad2 = (n) => String(n).padStart(2,'0');
 
   const formatTime = (m) => {
     const mins = Math.max(0, Math.round(m));
@@ -108,7 +90,6 @@
   };
 
   const parseTimeHM = (s) => {
-    // "H:MM" or "HH:MM"
     if (!s || !s.includes(':')) return 0;
     const [h, m] = s.split(':').map(Number);
     if (!Number.isFinite(h) || !Number.isFinite(m)) return 0;
@@ -128,8 +109,6 @@
     return credit > d60 ? 'margin-amber' : 'margin-blue';
   };
 
-  const pad2 = (n) => String(n).padStart(2,'0');
-
   function clearRoster(){
     document.getElementById('rosterInput').value = '';
     document.getElementById('tableContainer').innerHTML = '';
@@ -139,9 +118,7 @@
     state.yearFull = "";
   }
 
-  function detectMonthYearFromBottom(text){
-    // Prefer explicit "DATED 15Feb26" style
-    // Also accept any ddMonYY or ddMonYYYY anywhere in the paste.
+  function detectMonthYear(text){
     const dated = text.match(/\bDATED\s+(\d{1,2})([A-Za-z]{3})(\d{2,4})\b/i);
     const any = text.match(/\b(\d{1,2})([A-Za-z]{3})(\d{2,4})\b/i);
     const m = dated || any;
@@ -151,68 +128,49 @@
     if (!monthMap[monKey]) return false;
 
     const yy = m[3];
-    let yearFull = "";
-    if (yy.length === 4) yearFull = yy;
-    else {
-      // Assume 20xx for roster years
-      yearFull = `20${yy}`;
-    }
-
     state.monthAbbr = monthMap[monKey].abbr;
-    state.yearFull = yearFull;
+    state.yearFull = (yy.length === 4) ? yy : `20${yy}`;
     return true;
   }
 
-  // ---------- main parsing ----------
   function processRoster(){
     const text = document.getElementById('rosterInput').value || "";
+    const lines = text.split('\n');
+
     state.rosterData = [];
     state.monthAbbr = "";
     state.yearFull = "";
 
-    const ok = detectMonthYearFromBottom(text);
-    const bid = (state.monthAbbr && state.yearFull) ? `${state.monthAbbr} ${state.yearFull}` : "";
-    document.getElementById('bidPeriod').value = bid;
+    const ok = detectMonthYear(text);
+    document.getElementById('bidPeriod').value = ok ? `${state.monthAbbr} ${state.yearFull}` : "";
 
-    // Parse only the summary lines that contain Rpt/Rls/Duty/Cred
-    // Example:
-    // "                 Rpt  0505 Rls  1130        PER   19:00   5:20  8:55   5:21"
-    //
-    // We also need the date from the nearest preceding "15Feb" line.
-    const lines = text.split('\n');
+    // Date line (e.g. "15Feb")
+    const dateLine = /^\s*(\d{1,2})([A-Za-z]{3})\b/;
 
-    let currentDay = null; // "15"
-    let currentMon = null; // "Feb" from "15Feb"
-
-    const dateLine = /^\s*(\d{1,2})([A-Za-z]{3})\b/; // "15Feb"
+    // Summary line with duty/credit (last two tokens are Duty and Cred)
     const rptLine = /^\s*Rpt\s+(\d{4})\s+Rls\s+(\d{4}).*?(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s*$/;
 
-    for (const line of lines) {
+    let currentDay = null;
+    let currentMonKey = null;
+
+    for (const line of lines){
       const d = line.match(dateLine);
-      if (d) {
+      if (d){
         currentDay = pad2(d[1]);
-        currentMon = d[2]; // keep as-is, but normalize display later
+        currentMonKey = d[2].toLowerCase();
       }
 
       const r = line.match(rptLine);
-      if (r && currentDay && currentMon) {
-        const rpt = r[1];          // HHMM (report)
-        const rls = r[2];          // HHMM (release / sign-off)
+      if (r && currentDay && currentMonKey){
         const duty = parseTimeHM(r[3]);
         const cred = parseTimeHM(r[4]);
 
-        // Choose month/year: prefer detected (DATED ...), otherwise fall back to the "15Feb" month.
-        const monKey = currentMon.toLowerCase();
-        const monAbbr = monthMap[monKey]?.abbr || currentMon;
-        const yearShown = state.yearFull || "";
-
-        const prettyDate = yearShown
-          ? `${currentDay} ${monAbbr} ${yearShown}`
-          : `${currentDay} ${monAbbr}`;
+        const monAbbr = monthMap[currentMonKey]?.abbr || d[2];
+        const prettyDate = state.yearFull ? `${currentDay} ${monAbbr} ${state.yearFull}` : `${currentDay} ${monAbbr}`;
 
         state.rosterData.push({
           prettyDate,
-          origSOff: rls,
+          origSOff: r[2],     // Rls is sign-off
           origDuty: duty,
           credit: cred,
           origD60: duty * 0.6
@@ -224,29 +182,24 @@
   }
 
   function renderTable(monthYearDetected){
-    if (!state.rosterData.length) {
+    if (!state.rosterData.length){
       document.getElementById('tableContainer').innerHTML =
-        `<div class="notice">
-          No pattern “Rpt/Rls/Duty/Cred” lines were detected.<br>
-          Ensure you pasted the bottom section that includes lines like: <span class="mono">Rpt 0505 Rls 1130 ... Duty 8:55 Cred 5:21</span>
-        </div>`;
+        `<div class="notice">No pattern “Rpt/Rls/Duty/Cred” lines detected. Paste the bottom pattern section.</div>`;
       return;
     }
 
-    if (!monthYearDetected) {
-      // still renders, but warns why year may be missing
-      document.getElementById('tableContainer').innerHTML =
-        `<div class="notice">Month/year not detected from “DATED …”. Dates will show day+month only unless the roster text includes a ddMonYY/ddMonYYYY token.</div>`;
+    let notice = "";
+    if (!monthYearDetected){
+      notice = `<div class="notice">Month/year not detected from “DATED …”. Dates may show day+month only.</div>`;
     }
 
-    let html = `<table><thead><tr>
+    let html = `${notice}<table><thead><tr>
       <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
       <th>New S-Off</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
     </tr></thead><tbody>`;
 
     state.rosterData.forEach((row, i) => {
       const margin = Math.abs(row.credit - row.origD60);
-
       html += `<tr>
         <td class="mono" style="white-space:nowrap">${row.prettyDate}</td>
         <td class="mono">${row.origSOff}</td>
@@ -254,12 +207,7 @@
         <td class="mono">${formatTime(row.credit)}</td>
         <td class="mono">${formatTime(row.origD60)}</td>
         <td id="marginCell-${i}"><span class="mono ${getMarginClass(row.credit, row.origD60)}">${formatTime(margin)}</span></td>
-
-        <td>
-          <input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM"
-                 oninput="calculateAdjustment(${i}, this.value)">
-        </td>
-
+        <td><input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
         <td id="newDuty-${i}" class="mono">-</td>
         <td id="newD60-${i}" class="mono">-</td>
         <td id="gross-${i}" class="mono">$0.00</td>
@@ -269,20 +217,20 @@
     });
 
     html += `</tbody></table>`;
-    document.getElementById('tableContainer').innerHTML += html;
+    document.getElementById('tableContainer').innerHTML = html;
   }
 
-  // ---------- adjustment + pay ----------
   function calculateAdjustment(index, newValRaw){
-    const inputEls = document.querySelectorAll('.adj-input');
+    // sanitize to digits
+    const inputs = document.querySelectorAll('.adj-input');
     const newVal = (newValRaw || "").replace(/\D/g,"").slice(0,4);
-    if (inputEls[index] && inputEls[index].value !== newVal) inputEls[index].value = newVal;
+    if (inputs[index] && inputs[index].value !== newVal) inputs[index].value = newVal;
     if (newVal.length !== 4) return;
 
     const row = state.rosterData[index];
-
-    const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-    const taxMult = 1 - ((parseFloat(document.getElementById('taxRate').value) || 0) / 100);
+    const rate = parseFloat(document.getElementById('hourlyRate').value) || 353;
+    const taxRate = parseFloat(document.getElementById('taxRate').value);
+    const taxMult = 1 - ((Number.isFinite(taxRate) ? taxRate : 47) / 100);
 
     const t1 = parseHHMM(row.origSOff);
     const t2base = parseHHMM(newVal);
@@ -295,9 +243,12 @@
     const finalDuty = row.origDuty + delta;
     const finalD60 = finalDuty * 0.6;
 
-    // Pay only for minutes above BOTH old .6 duty and credit:
-    const payFromMins = Math.max(row.origD60, row.credit);
-    const diffMins = Math.max(0, finalD60 - payFromMins);
+    // Condition: only pay if new .6 > credit AND new .6 > original .6
+    const shouldPay = (finalD60 > row.credit) && (finalD60 > row.origD60);
+
+    // Pay only the portion above BOTH thresholds
+    const payFromMins = Math.max(row.credit, row.origD60);
+    const diffMins = shouldPay ? (finalD60 - payFromMins) : 0;
 
     const gross = (diffMins / 60) * rate;
     const net = gross * taxMult;
@@ -314,12 +265,9 @@
 
   function updateAllCalculations(){
     const inputs = document.querySelectorAll('.adj-input');
-    inputs.forEach((el, i) => {
-      if (el && el.value) calculateAdjustment(i, el.value);
-    });
+    inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
-  // ---------- export ----------
   function exportDay(i){
     const row = state.rosterData[i];
     const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=DPC60+Extension+${encodeURIComponent(row.prettyDate)}`;
