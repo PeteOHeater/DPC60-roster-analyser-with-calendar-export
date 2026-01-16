@@ -232,6 +232,10 @@
             <label>Tax Rate %</label>
             <input type="number" id="taxRate" value="47" oninput="updateAll()">
         </div>
+        <div class="input-group">
+            <label>Roster Month/Year</label>
+            <input type="month" id="rosterMonth" value="">
+        </div>
     </div>
 
     <textarea id="rosterInput" placeholder="Use the send roster function in Webcis, then copy/paste the calendar portion of your roster in here"></textarea>
@@ -258,6 +262,13 @@
 <script>
 let rosterData = [];
 
+// Set default month to current month
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const monthString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    document.getElementById('rosterMonth').value = monthString;
+});
+
 function parseTime(s) {
     if (!s || !s.includes(':')) return 0;
     const [h, m] = s.split(':').map(Number);
@@ -280,20 +291,36 @@ function processRoster() {
     const text = document.getElementById('rosterInput').value;
     const lines = text.split('\n');
     rosterData = [];
-    const lineRegex = /^(\d{2}\s[A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
+    const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
 
     lines.forEach((line, index) => {
         const match = line.match(lineRegex);
         if (match) {
-            const dutyMins = parseTime(match[4]);
-            const credMins = parseTime(match[5]);
+            console.log('Matched line:', line);
+            console.log('Date parts - Day:', match[1], 'DayName:', match[2]);
+            
+            const dutyMins = parseTime(match[5]);
+            const credMins = parseTime(match[6]);
             const d60 = dutyMins * 0.6;
             rosterData.push({
-                id: index, date: match[1], sOn: match[2], origSOf: match[3],
-                origDuty: dutyMins, credit: credMins, origD60: d60
+                id: index, 
+                day: match[1],        // Just the day number
+                dayName: match[2],    // Day name (Sat, Sun, Mon, etc.)
+                date: `${match[1]} ${match[2]}`,  // Combined for display
+                sOn: match[3], 
+                origSOf: match[4],
+                origDuty: dutyMins, 
+                credit: credMins, 
+                origD60: d60
             });
         }
     });
+    
+    // Try to infer the month/year from the current date or ask user
+    if (rosterData.length > 0) {
+        console.log('Processed roster data:', rosterData);
+    }
+    
     renderTable();
 }
 
@@ -376,17 +403,31 @@ function updateAll() {
 }
 
 function parseDate(dateStr) {
-    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    const parts = dateStr.split(' ');
-    const day = parseInt(parts[0]);
-    const month = months[parts[1]];
-    const year = new Date().getFullYear();
-    return new Date(year, month, day);
+    // Get the month/year from the input field
+    const monthInput = document.getElementById('rosterMonth').value;
+    
+    if (!monthInput) {
+        console.error('Please select a roster month/year');
+        alert('Please select the Roster Month/Year at the top before exporting to calendar.');
+        return null;
+    }
+    
+    const [year, month] = monthInput.split('-').map(Number);
+    const day = parseInt(dateStr.split(' ')[0]);
+    
+    const date = new Date(year, month - 1, day); // month is 0-indexed in Date
+    
+    console.log('Parsed date:', dateStr, '→', date.toDateString());
+    return date;
 }
 
 function createCalendarEvent(row) {
     const marginMins = Math.abs(row.credit - row.origD60);
     const dutyDate = parseDate(row.date);
+    
+    if (!dutyDate) {
+        return null; // parseDate will have shown an error already
+    }
     
     const title = `⚠️ DPC60 Alert: ${formatTime(marginMins)} margin`;
     const description = `DUTY DATE: ${row.date}%0A` +
@@ -428,6 +469,8 @@ function exportSingleDay(id) {
     
     try {
         const calUrl = createCalendarEvent(row);
+        if (!calUrl) return; // Error already shown by createCalendarEvent
+        
         console.log('Opening calendar URL:', calUrl);
         const newWindow = window.open(calUrl, '_blank');
         
