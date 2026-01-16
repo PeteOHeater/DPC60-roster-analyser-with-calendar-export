@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DPC 60 Roster Analyser</title>
+    <title>DPC 60 Roster Analyser - Fixed</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -51,7 +51,7 @@
         }
 
         .instructions-panel {
-            margin-top: 20px;
+            margin: 20px 0;
             padding: 15px;
             border-radius: 12px;
             background: #fff;
@@ -166,6 +166,7 @@
         let previousDay = null;
         let cumulativeOffset = 0;
 
+        // Extract Bid Period and Month/Year
         lines.forEach(line => {
             const bpMatch = line.match(/Bid Period\s+(\d+)/i);
             const dateMatch = line.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/i);
@@ -181,33 +182,32 @@
         lines.forEach(line => {
             const match = line.match(lineRegex);
             if (match) {
-                const currentDay = parseInt(match[1]);
-                if (previousDay !== null && currentDay < previousDay) cumulativeOffset++;
+                const dayNum = parseInt(match[1]);
+                if (previousDay !== null && dayNum < previousDay) cumulativeOffset++;
                 
                 const dutyMins = parseTime(match[5]);
                 const credMins = parseTime(match[6]);
-                
-                // Temporary row to calculate full date for display
-                const tempRow = { day: match[1], actualMonthOffset: cumulativeOffset };
-                const fullDateObj = getFullDate(tempRow);
-                const displayDate = fullDateObj ? fullDateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : `${match[1]} ${match[2]}`;
+
+                // Create a real date object to format for display
+                const dateObj = getFullDate({ day: match[1], actualMonthOffset: cumulativeOffset });
+                const fullDateStr = dateObj ? dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : `${match[1]} ${match[2]}`;
 
                 state.rosterData.push({
                     index: state.rosterData.length,
                     day: match[1],
-                    dateStr: displayDate, 
-                    actualMonthOffset: cumulativeOffset,
+                    dateDisplay: `${dayNum} ${match[2]} ${fullDateStr.split(' ')[2]}`, // Ensuring full Year is shown
+                    fullDateObj: dateObj,
                     origSOf: match[4],
                     origDuty: dutyMins,
                     credit: credMins,
                     origD60: dutyMins * 0.6
                 });
-                previousDay = currentDay;
+                previousDay = dayNum;
             }
         });
 
         if (state.rosterData.length > 0) {
-            document.getElementById('bidPeriod').value = `${state.bidPeriodInfo}: ${state.rosterData[0].dateStr} - ${state.rosterData[state.rosterData.length-1].dateStr}`;
+            document.getElementById('bidPeriod').value = `${state.bidPeriodInfo}`;
             renderTable();
         }
     }
@@ -221,7 +221,7 @@
         state.rosterData.forEach((row, i) => {
             const marginVal = Math.abs(row.credit - row.origD60);
             html += `<tr>
-                <td class="mono" style="white-space: nowrap;">${row.dateStr}</td>
+                <td class="mono" style="white-space:nowrap">${row.dateDisplay}</td>
                 <td class="mono">${row.origSOf}</td>
                 <td class="mono" style="color:var(--text-secondary)">${formatTime(row.origDuty)}</td>
                 <td class="mono">${formatTime(row.credit)}</td>
@@ -232,7 +232,7 @@
                 <td id="newD60-${i}" class="mono">-</td>
                 <td id="gross-${i}" class="mono" style="font-weight:700">$0.00</td>
                 <td id="net-${i}" class="mono extra-net">$0.00</td>
-                <td><button style="padding:5px 10px; font-size:10px" onclick="exportSingleDay(${i})">📅 Export</button></td>
+                <td><button style="padding:5px 10px; font-size:10px; background:#444" onclick="exportSingleDay(${i})">📅 Export</button></td>
             </tr>`;
         });
         document.getElementById('tableContainer').innerHTML = html + `</tbody></table>`;
@@ -245,27 +245,29 @@
         const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
         const taxMult = 1 - ((parseFloat(document.getElementById('taxRate').value) || 0) / 100);
 
-        const origSOfMins = (parseInt(row.origSOf.slice(0,2)) * 60) + parseInt(row.origSOf.slice(2));
-        let newSOfMins = (parseInt(newVal.slice(0,2)) * 60) + parseInt(newVal.slice(2));
-        
-        // Correct Midnight Wrap Logic
-        // If typing a time that is numerically less than the original (e.g. 1130 vs 1930), 
-        // it means we arrived the next day.
-        if (newSOfMins < origSOfMins) {
-            newSOfMins += 1440; 
+        const h1 = parseInt(row.origSOf.slice(0,2));
+        const m1 = parseInt(row.origSOf.slice(2));
+        const h2 = parseInt(newVal.slice(0,2));
+        const m2 = parseInt(newVal.slice(2));
+
+        let origTotalMins = (h1 * 60) + m1;
+        let newTotalMins = (h2 * 60) + m2;
+
+        // If new sign off is numerically lower, it's the next day
+        if (newTotalMins < origTotalMins) {
+            newTotalMins += 1440;
         }
 
-        const delta = newSOfMins - origSOfMins;
-        const newTotalDuty = row.origDuty + delta; 
-        const newD60 = newTotalDuty * 0.6;
+        const delta = newTotalMins - origTotalMins;
+        const finalNewDuty = row.origDuty + delta;
+        const newD60 = finalNewDuty * 0.6;
         
         const baselinePay = Math.max(row.credit, row.origD60);
         const simulatedPay = Math.max(row.credit, newD60);
         const diffMins = Math.max(0, simulatedPay - baselinePay);
         const gross = (diffMins / 60) * rate;
 
-        // Update Table Cells
-        document.getElementById(`newDuty-${index}`).innerText = formatTime(newTotalDuty);
+        document.getElementById(`newDuty-${index}`).innerText = formatTime(finalNewDuty);
         document.getElementById(`newD60-${index}`).innerText = formatTime(newD60);
         document.getElementById(`gross-${index}`).innerText = `$${gross.toFixed(2)}`;
         document.getElementById(`net-${index}`).innerText = `$${(gross * taxMult).toFixed(2)}`;
@@ -292,18 +294,30 @@
 
     function exportSingleDay(index) {
         const row = state.rosterData[index];
-        const date = getFullDate(row);
-        if (!date) return alert("Date error.");
+        const date = row.fullDateObj;
+        if (!date) return alert("Error: Could not determine date. Ensure Month/Year is in pasted text.");
+
         const title = `DPC60 Margin: ${formatTime(Math.abs(row.credit - row.origD60))}`;
-        const start = date.toISOString().replace(/-|:|\.\d+/g, "");
-        const end = new Date(date.getTime() + 30*60000).toISOString().replace(/-|:|\.\d+/g, "");
-        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}`, '_blank');
+        
+        // Format for Google Calendar (YYYYMMDDTHHMMSS)
+        const pad = (n) => String(n).padStart(2, '0');
+        const datePart = `${date.getFullYear()}${pad(date.getMonth()+1)}${pad(date.getDate())}`;
+        const timeStart = `${pad(parseInt(row.origSOf.slice(0,2)))}${pad(parseInt(row.origSOf.slice(2)))}00`;
+        const timeEnd = `${pad(parseInt(row.origSOf.slice(0,2)))}${pad(parseInt(row.origSOf.slice(2))+30)}00`;
+
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${datePart}T${timeStart}/${datePart}T${timeEnd}`;
+        window.open(url, '_blank');
     }
 
-    function exportToCalendar() { state.rosterData.forEach((_, i) => exportSingleDay(i)); }
+    function exportToCalendar() { 
+        state.rosterData.forEach((_, i) => {
+            setTimeout(() => exportSingleDay(i), i * 300); // Staggered to bypass popup blockers
+        });
+    }
+
     function exportToEmail() {
         let body = `DPC60 ANALYSIS\n\n`;
-        state.rosterData.forEach(r => body += `${r.dateStr}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`);
+        state.rosterData.forEach(r => body += `${r.dateDisplay}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`);
         window.location.href = `mailto:?subject=Roster Analysis&body=${encodeURIComponent(body)}`;
     }
 </script>
