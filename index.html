@@ -268,9 +268,16 @@ function processRoster() {
         'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
     };
     var patternDateRegex = /(\d+)\s+DATED\s+(\d{1,2})([A-Z][a-z]{2})(\d{2})/i;
+    var bidPeriodRegex = /Bid Period\s+(\d+)/i;
     
     for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
+        
+        var bidMatch = line.match(bidPeriodRegex);
+        if (bidMatch) {
+            bidPeriodNumber = bidMatch[1];
+        }
+        
         var monthMatch = line.match(monthYearRegex);
         if (monthMatch) {
             var monthName = monthMatch[1].toLowerCase();
@@ -298,6 +305,9 @@ function processRoster() {
     
     var lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
     var previousDay = null;
+    var firstDutyDate = null;
+    var lastDutyDate = null;
+    var bidPeriodNumber = null;
     
     for (var j = 0; j < lines.length; j++) {
         var match = lines[j].match(lineRegex);
@@ -322,6 +332,12 @@ function processRoster() {
                 credit: credMins, 
                 origD60: d60
             });
+            
+            if (!firstDutyDate) {
+                firstDutyDate = match[1] + ' ' + match[2];
+            }
+            lastDutyDate = match[1] + ' ' + match[2];
+            
             previousDay = currentDay;
         }
     }
@@ -335,8 +351,12 @@ function processRoster() {
     }
     
     if (rosterData.length > 0) {
-        if (bidPeriodStart && bidPeriodEnd) {
-            document.getElementById('bidPeriod').value = bidPeriodStart + ' - ' + bidPeriodEnd;
+        if (bidPeriodNumber && firstDutyDate && lastDutyDate) {
+            bidPeriodStart = firstDutyDate;
+            bidPeriodEnd = lastDutyDate;
+            document.getElementById('bidPeriod').value = 'BP ' + bidPeriodNumber + ': ' + bidPeriodStart + ' - ' + bidPeriodEnd;
+        } else if (firstDutyDate && lastDutyDate) {
+            document.getElementById('bidPeriod').value = firstDutyDate + ' - ' + lastDutyDate;
         } else {
             document.getElementById('bidPeriod').value = 'Not detected';
         }
