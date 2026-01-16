@@ -1,220 +1,300 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DPC 60 Roster Analyser</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --apple-bg: #f5f5f7;
-            --aviation-black: #1d1d1f;
-            --accent-red: #e21b22;
-            --glass-border: rgba(0, 0, 0, 0.08);
-            --text-secondary: #86868b;
-            --success-green: #16a34a;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DPC 60 Roster Analyser</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --apple-bg: #f5f5f7;
+      --aviation-black: #1d1d1f;
+      --accent-red: #e21b22;
+      --glass-border: rgba(0, 0, 0, 0.08);
+      --text-secondary: #86868b;
+      --success-green: #16a34a;
+    }
 
-        body { font-family: 'Inter', sans-serif; padding: 40px 20px; background: var(--apple-bg); color: var(--aviation-black); -webkit-font-smoothing: antialiased; }
-        .card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); padding: 40px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); max-width: 1500px; margin: auto; border: 1px solid var(--glass-border); }
-        h2 { font-weight: 700; text-align: center; margin-bottom: 30px; font-size: 28px; }
+    body { font-family: 'Inter', sans-serif; padding: 40px 20px; background: var(--apple-bg); color: var(--aviation-black); -webkit-font-smoothing: antialiased; }
+    .card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); padding: 40px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); max-width: 1500px; margin: auto; border: 1px solid var(--glass-border); }
+    h2 { font-weight: 700; text-align: center; margin-bottom: 30px; font-size: 28px; }
 
-        .controls { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
-        .input-group { display: flex; flex-direction: column; gap: 8px; }
-        label { font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); }
-        input[type="number"], input[type="text"] { padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: white; }
+    .controls { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+    .input-group { display: flex; flex-direction: column; gap: 8px; }
+    label { font-size: 11px; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); }
+    input[type="number"], input[type="text"] { padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: white; }
 
-        textarea { width: 100%; height: 120px; padding: 15px; border: 1px solid #d2d2d7; border-radius: 12px; font-family: monospace; font-size: 13px; box-sizing: border-box; margin-bottom: 20px; }
+    textarea { width: 100%; height: 120px; padding: 15px; border: 1px solid #d2d2d7; border-radius: 12px; font-family: monospace; font-size: 13px; box-sizing: border-box; margin-bottom: 20px; }
 
-        .instructions-panel { margin: 20px 0; padding: 15px; border-radius: 12px; background: #fff; border: 1px solid #e5e5e7; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .instruction-item { font-size: 12px; color: #424245; }
-        .marker { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; }
+    .instructions-panel { margin: 20px 0; padding: 15px; border-radius: 12px; background: #fff; border: 1px solid #e5e5e7; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .instruction-item { font-size: 12px; color: #424245; }
+    .marker { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; }
 
-        .button-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; }
-        button { background: var(--aviation-black); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-secondary { background: var(--accent-red); }
-        .btn-outline { background: transparent; color: var(--aviation-black); border: 1px solid var(--aviation-black); }
+    .button-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
+    button { background: var(--aviation-black); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: var(--accent-red); }
+    .btn-outline { background: transparent; color: var(--aviation-black); border: 1px solid var(--aviation-black); }
 
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
-        th { color: var(--text-secondary); text-transform: uppercase; font-size: 10px; padding: 12px; border-bottom: 1px solid #d2d2d7; text-align: left; }
-        td { padding: 14px 12px; border-bottom: 1px solid #f2f2f2; font-size: 13px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
+    th { color: var(--text-secondary); text-transform: uppercase; font-size: 10px; padding: 12px; border-bottom: 1px solid #d2d2d7; text-align: left; }
+    td { padding: 14px 12px; border-bottom: 1px solid #f2f2f2; font-size: 13px; }
 
-        .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; font-weight: 600; padding: 2px 6px; } 
-        .margin-blue { background-color: #e3f2fd; color: #1565c0; border-radius: 4px; padding: 2px 6px; }  
-        .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; padding: 2px 6px; } 
+    .margin-green { background-color: #e8f5e9; color: #2e7d32; border-radius: 4px; font-weight: 600; padding: 2px 6px; }
+    .margin-blue { background-color: #e3f2fd; color: #1565c0; border-radius: 4px; padding: 2px 6px; }
+    .margin-amber { background-color: #fff8e1; color: #ef6c00; border-radius: 4px; padding: 2px 6px; }
 
-        .extra-net { color: var(--success-green); font-weight: 700; }
-        .adj-input { width: 70px; padding: 6px; border: 2px solid var(--accent-red); border-radius: 6px; text-align: center; font-weight: bold; }
-        .mono { font-family: 'SF Mono', monospace; }
-        .export-btn { background: #3a3a3c; font-size: 11px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
-    </style>
+    .extra-net { color: var(--success-green); font-weight: 700; }
+    .adj-input { width: 78px; padding: 6px; border: 2px solid var(--accent-red); border-radius: 6px; text-align: center; font-weight: bold; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .export-btn { background: #3a3a3c; font-size: 11px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; }
+
+    .hint { font-size: 12px; color: var(--text-secondary); margin-top: -10px; margin-bottom: 18px; }
+  </style>
 </head>
-<body>
 
-<div class="card">
+<body>
+  <div class="card">
     <h2>DPC60 Roster Analyser</h2>
-    
+
     <div class="controls">
-        <div class="input-group"><label>Hourly Rate ($)</label><input type="number" id="hourlyRate" value="353" oninput="updateAllCalculations()"></div>
-        <div class="input-group"><label>Tax Rate %</label><input type="number" id="taxRate" value="47" oninput="updateAllCalculations()"></div>
-        <div class="input-group"><label>Bid Period</label><input type="text" id="bidPeriod" readonly style="background: #eee;"></div>
+      <div class="input-group">
+        <label>Hourly Rate ($)</label>
+        <input type="number" id="hourlyRate" value="353" oninput="updateAllCalculations()">
+      </div>
+      <div class="input-group">
+        <label>Tax Rate %</label>
+        <input type="number" id="taxRate" value="47" oninput="updateAllCalculations()">
+      </div>
+      <div class="input-group">
+        <label>Bid Period</label>
+        <input type="text" id="bidPeriod" readonly style="background:#eee;">
+      </div>
     </div>
 
     <textarea id="rosterInput" placeholder="Use the send roster function in WebCis, then copy/paste all into here"></textarea>
+    <div class="hint">New S-Off format: HHMM (24h). Example: 2315. Invalid times are ignored.</div>
 
     <div class="instructions-panel">
-        <div class="instruction-item"><span class="marker" style="background: #e8f5e9; border: 1px solid #2e7d32;"></span><strong>Green:</strong> Built to DPC60 or increased to DPC60.</div>
-        <div class="instruction-item"><span class="marker" style="background: #fff8e1; border: 1px solid #ef6c00;"></span><strong>Amber:</strong> Credit Hours paid unless margin is extended.</div>
+      <div class="instruction-item">
+        <span class="marker" style="background:#e8f5e9; border:1px solid #2e7d32;"></span>
+        <strong>Green:</strong> Built to DPC60 or increased to DPC60.
+      </div>
+      <div class="instruction-item">
+        <span class="marker" style="background:#fff8e1; border:1px solid #ef6c00;"></span>
+        <strong>Amber:</strong> Credit Hours paid unless margin is extended.
+      </div>
     </div>
 
     <div class="button-container">
-        <button onclick="processRoster()">Process Roster</button>
-        <button class="btn-outline" onclick="clearRoster()">Clear</button>
-        <button class="btn-secondary" onclick="exportToCalendar()">Export All to Calendar</button>
-        <button class="btn-secondary" onclick="exportToEmail()">📧 Email Results</button>
+      <button onclick="processRoster()">Process Roster</button>
+      <button class="btn-outline" onclick="clearRoster()">Clear</button>
+      <button class="btn-secondary" onclick="exportToCalendar()">Export All to Calendar</button>
+      <button class="btn-secondary" onclick="exportToEmail()">📧 Email Results</button>
     </div>
 
     <div id="tableContainer"></div>
-</div>
+  </div>
 
 <script>
-    let state = { rosterData: [], detectedMonth: "", detectedYear: "" };
+  let state = { rosterData: [], detectedMonth: "", detectedYear: "" };
 
-    const parseTime = (s) => {
-        if (!s || !s.includes(':')) return 0;
-        const [h, m] = s.split(':').map(Number);
-        return (h * 60) + m;
-    };
+  const parseTimeHM = (s) => {
+    // expects H:MM or HH:MM
+    if (!s || !s.includes(':')) return 0;
+    const [h, m] = s.split(':').map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return 0;
+    return (h * 60) + m;
+  };
 
-    const formatTime = (m) => {
-        const mins = Math.max(0, Math.round(m));
-        return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}`;
-    };
+  const parseHHMM = (s) => {
+    // expects exactly 4 digits HHMM
+    if (!/^\d{4}$/.test(s)) return null;
+    const hh = parseInt(s.slice(0,2), 10);
+    const mm = parseInt(s.slice(2), 10);
+    if (hh > 23 || mm > 59) return null;
+    return hh * 60 + mm;
+  };
 
-    const getMarginClass = (credit, d60) => {
-        if (Math.abs(credit - d60) <= 0.5) return 'margin-green';
-        return credit > d60 ? 'margin-amber' : 'margin-blue';
-    };
+  const formatTime = (m) => {
+    const mins = Math.max(0, Math.round(m));
+    return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}`;
+  };
 
-    function clearRoster() {
-        document.getElementById('rosterInput').value = '';
-        document.getElementById('tableContainer').innerHTML = '';
-        document.getElementById('bidPeriod').value = '';
-        state.rosterData = [];
+  const getMarginClass = (credit, d60) => {
+    if (Math.abs(credit - d60) <= 0.5) return 'margin-green';
+    return credit > d60 ? 'margin-amber' : 'margin-blue';
+  };
+
+  function clearRoster() {
+    document.getElementById('rosterInput').value = '';
+    document.getElementById('tableContainer').innerHTML = '';
+    document.getElementById('bidPeriod').value = '';
+    state.rosterData = [];
+    state.detectedMonth = "";
+    state.detectedYear = "";
+  }
+
+  function processRoster() {
+    const text = document.getElementById('rosterInput').value || "";
+    const lines = text.split('\n');
+    state.rosterData = [];
+    state.detectedMonth = "";
+    state.detectedYear = "";
+
+    // Find Month/Year + Bid Period (if present)
+    lines.forEach(line => {
+      const dateMatch = line.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+      const bpMatch = line.match(/Bid Period\s+(\d+)/i);
+      if (dateMatch) {
+        state.detectedMonth = dateMatch[1];
+        state.detectedYear = dateMatch[2];
+      }
+      if (bpMatch) {
+        const mmYY = (state.detectedMonth && state.detectedYear) ? ` - ${state.detectedMonth} ${state.detectedYear}` : "";
+        document.getElementById('bidPeriod').value = `BP ${bpMatch[1]}${mmYY}`;
+      }
+    });
+
+    // Parse row data:
+    // Groups: DD DDD .... SOff(4digits) .... Duty(H:MM) Credit(H:MM)
+    // NOTE: this depends on your WebCis line layout; adjust if needed.
+    const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
+
+    lines.forEach(line => {
+      const match = line.match(lineRegex);
+      if (!match) return;
+
+      const dutyMins = parseTimeHM(match[5]);
+      const credMins = parseTimeHM(match[6]);
+
+      const day = match[1];
+      const dow = match[2];
+
+      // Month shown with date on left column
+      const prettyDate = (state.detectedMonth && state.detectedYear)
+        ? `${day} ${state.detectedMonth} ${state.detectedYear} (${dow})`
+        : `${day} (${dow})`;
+
+      state.rosterData.push({
+        prettyDate,
+        origSOff: match[4],          // HHMM
+        origDuty: dutyMins,          // minutes
+        credit: credMins,            // minutes
+        origD60: dutyMins * 0.6      // minutes
+      });
+    });
+
+    renderTable();
+  }
+
+  function renderTable() {
+    if (!state.rosterData.length) {
+      document.getElementById('tableContainer').innerHTML =
+        `<div style="padding:12px; color:var(--text-secondary);">No duty rows detected. Paste the full WebCis roster text and try again.</div>`;
+      return;
     }
 
-    function processRoster() {
-        const text = document.getElementById('rosterInput').value;
-        const lines = text.split('\n');
-        state.rosterData = [];
-        
-        // Find Month and Year from Header
-        lines.forEach(line => {
-            const dateMatch = line.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
-            const bpMatch = line.match(/Bid Period\s+(\d+)/i);
-            if (dateMatch) {
-                state.detectedMonth = dateMatch[1];
-                state.detectedYear = dateMatch[2];
-            }
-            if (bpMatch) document.getElementById('bidPeriod').value = `BP ${bpMatch[1]} - ${state.detectedMonth} ${state.detectedYear}`;
-        });
+    let html = `<table><thead><tr>
+      <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
+      <th>New S-Off</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
+    </tr></thead><tbody>`;
 
-        // Parse Row Data
-        const lineRegex = /^(\d{2})\s+([A-Za-z]{3})\s+.*?\s+(\d{4})\s+(\d{4})\s+(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})/;
-        lines.forEach(line => {
-            const match = line.match(lineRegex);
-            if (match) {
-                const dutyMins = parseTime(match[5]);
-                const credMins = parseTime(match[6]);
-                
-                state.rosterData.push({
-                    fullDate: `${match[1]} ${match[2]} ${state.detectedMonth} ${state.detectedYear}`,
-                    origSOf: match[4],
-                    origDuty: dutyMins,
-                    credit: credMins,
-                    origD60: dutyMins * 0.6
-                });
-            }
-        });
-        renderTable();
-    }
+    state.rosterData.forEach((row, i) => {
+      const margin = Math.abs(row.credit - row.origD60);
 
-    function renderTable() {
-        let html = `<table><thead><tr>
-            <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
-            <th>New S-Off</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
-        </tr></thead><tbody>`;
+      html += `<tr>
+        <td class="mono" style="white-space:nowrap">${row.prettyDate}</td>
+        <td class="mono">${row.origSOff}</td>
+        <td class="mono" style="color:var(--text-secondary)">${formatTime(row.origDuty)}</td>
+        <td class="mono">${formatTime(row.credit)}</td>
+        <td class="mono">${formatTime(row.origD60)}</td>
+        <td class="mono ${getMarginClass(row.credit, row.origD60)}" id="marginCell-${i}">${formatTime(margin)}</td>
 
-        state.rosterData.forEach((row, i) => {
-            const margin = Math.abs(row.credit - row.origD60);
-            html += `<tr>
-                <td class="mono" style="white-space:nowrap">${row.fullDate}</td>
-                <td class="mono">${row.origSOf}</td>
-                <td class="mono" style="color:var(--text-secondary)">${formatTime(row.origDuty)}</td>
-                <td class="mono">${formatTime(row.credit)}</td>
-                <td class="mono">${formatTime(row.origD60)}</td>
-                <td class="mono ${getMarginClass(row.credit, row.origD60)}" id="marginCell-${i}">${formatTime(margin)}</td>
-                <td><input type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
-                <td id="newDuty-${i}" class="mono">-</td>
-                <td id="newD60-${i}" class="mono">-</td>
-                <td id="gross-${i}" class="mono">$0.00</td>
-                <td id="net-${i}" class="mono extra-net">$0.00</td>
-                <td><button class="export-btn" onclick="exportDay(${i})">🗓️ Export</button></td>
-            </tr>`;
-        });
-        document.getElementById('tableContainer').innerHTML = html + `</tbody></table>`;
-    }
+        <td><input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM"
+              oninput="calculateAdjustment(${i}, this.value)"></td>
 
-    function calculateAdjustment(index, newVal) {
-        if (newVal.length !== 4) return;
-        const row = state.rosterData[index];
-        const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-        const taxMult = 1 - ((parseFloat(document.getElementById('taxRate').value) || 0) / 100);
+        <td id="newDuty-${i}" class="mono">-</td>
+        <td id="newD60-${i}" class="mono">-</td>
+        <td id="gross-${i}" class="mono">$0.00</td>
+        <td id="net-${i}" class="mono extra-net">$0.00</td>
+        <td><button class="export-btn" onclick="exportDay(${i})">🗓️ Export</button></td>
+      </tr>`;
+    });
 
-        const t1 = (parseInt(row.origSOf.slice(0,2)) * 60) + parseInt(row.origSOf.slice(2));
-        let t2 = (parseInt(newVal.slice(0,2)) * 60) + parseInt(newVal.slice(2));
-        if (t2 < t1) t2 += 1440; // Midnight rollover
+    document.getElementById('tableContainer').innerHTML = html + `</tbody></table>`;
+  }
 
-        const delta = t2 - t1;
-        const finalDuty = row.origDuty + delta;
-        const finalD60 = finalDuty * 0.6;
+  function calculateAdjustment(index, newValRaw) {
+    // Keep digits only (helps on mobile copy/paste)
+    const newVal = (newValRaw || "").replace(/\D/g, "").slice(0, 4);
 
-        // FIXED PAY LOGIC: Pay is the difference between NEW .6 Duty and ORIGINAL .6 Duty
-        // OR the difference between NEW .6 Duty and Credit (whichever results in higher pay)
-        const diffMins = Math.max(0, finalD60 - row.origD60);
-        
-        const gross = (diffMins / 60) * rate;
+    // Write back sanitized value so the UI matches what is being calculated
+    const inputs = document.querySelectorAll('.adj-input');
+    if (inputs[index] && inputs[index].value !== newVal) inputs[index].value = newVal;
 
-        document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDuty);
-        document.getElementById(`newD60-${index}`).innerText = formatTime(finalD60);
-        document.getElementById(`gross-${index}`).innerText = `$${gross.toFixed(2)}`;
-        document.getElementById(`net-${index}`).innerText = `$${(gross * taxMult).toFixed(2)}`;
-        
-        const mCell = document.getElementById(`marginCell-${index}`);
-        mCell.innerText = formatTime(Math.abs(row.credit - finalD60));
-        mCell.className = `mono ${getMarginClass(row.credit, finalD60)}`;
-    }
+    // Only calculate when we have 4 digits
+    if (newVal.length !== 4) return;
 
-    function updateAllCalculations() {
-        state.rosterData.forEach((_, i) => {
-            const input = document.querySelectorAll('.adj-input')[i];
-            if (input && input.value) calculateAdjustment(i, input.value);
-        });
-    }
+    const row = state.rosterData[index];
 
-    function exportDay(i) {
-        const row = state.rosterData[i];
-        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=DPC60+Extension+${encodeURIComponent(row.fullDate)}`;
-        window.open(url, '_blank');
-    }
+    const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+    const taxMult = 1 - ((parseFloat(document.getElementById('taxRate').value) || 0) / 100);
 
-    function exportToCalendar() { state.rosterData.forEach((_, i) => exportDay(i)); }
-    function exportToEmail() {
-        let body = `DPC60 ANALYSIS\n\n`;
-        state.rosterData.forEach(r => body += `${r.fullDate}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`);
-        window.location.href = `mailto:?subject=Roster Analysis&body=${encodeURIComponent(body)}`;
-    }
+    const t1 = parseHHMM(row.origSOff);
+    const t2base = parseHHMM(newVal);
+    if (t1 === null || t2base === null) return;
+
+    let t2 = t2base;
+    if (t2 < t1) t2 += 1440; // midnight rollover
+
+    const delta = t2 - t1;
+    const finalDuty = row.origDuty + delta;
+    const finalD60 = finalDuty * 0.6;
+
+    // YOUR RULE:
+    // - new .6 duty must be higher than old .6 duty (implicit by using max with old)
+    // - and must be higher than credit to pay
+    // Therefore pay only for minutes above BOTH old .6 and credit:
+    const payFromMins = Math.max(row.origD60, row.credit);
+    const diffMins = Math.max(0, finalD60 - payFromMins);
+
+    const gross = (diffMins / 60) * rate;
+
+    document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDuty);
+    document.getElementById(`newD60-${index}`).innerText = formatTime(finalD60);
+    document.getElementById(`gross-${index}`).innerText = `$${gross.toFixed(2)}`;
+    document.getElementById(`net-${index}`).innerText = `$${(gross * taxMult).toFixed(2)}`;
+
+    const mCell = document.getElementById(`marginCell-${index}`);
+    mCell.innerText = formatTime(Math.abs(row.credit - finalD60));
+    mCell.className = `mono ${getMarginClass(row.credit, finalD60)}`;
+  }
+
+  function updateAllCalculations() {
+    const inputs = document.querySelectorAll('.adj-input');
+    inputs.forEach((input, i) => {
+      if (input && input.value) calculateAdjustment(i, input.value);
+    });
+  }
+
+  function exportDay(i) {
+    const row = state.rosterData[i];
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=DPC60+Extension+${encodeURIComponent(row.prettyDate)}`;
+    window.open(url, '_blank');
+  }
+
+  function exportToCalendar() {
+    state.rosterData.forEach((_, i) => exportDay(i));
+  }
+
+  function exportToEmail() {
+    let body = `DPC60 ANALYSIS\n\n`;
+    state.rosterData.forEach(r => {
+      body += `${r.prettyDate}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`;
+    });
+    window.location.href = `mailto:?subject=Roster Analysis&body=${encodeURIComponent(body)}`;
+  }
 </script>
 </body>
 </html>
