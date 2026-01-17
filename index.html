@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DPC 60 Roster Analyser</title>
+  <title>DPC60 Roster Analyser</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -70,6 +70,25 @@
       display: inline-block;
       font-weight: 800;
     }
+
+    /* Export modal (native <dialog>) */
+    dialog.export-dialog{
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 16px;
+      padding: 18px 16px;
+      max-width: 520px;
+      width: calc(100% - 24px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    }
+    dialog.export-dialog::backdrop{
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+    }
+    .export-dialog h3{ margin:0 0 10px 0; font-size:16px; }
+    .export-dialog p{ margin:0 0 14px 0; color: var(--text-secondary); font-size: 12px; line-height: 1.35; }
+    .export-actions{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .export-actions button{ padding:10px 14px; border-radius:12px; font-size:12px; }
+    .export-actions .cancel{ background:#e5e5e7; color:#1d1d1f; }
   </style>
 </head>
 
@@ -122,6 +141,17 @@
 
     <div id="tableContainer"></div>
   </div>
+
+  <!-- Export chooser modal -->
+  <dialog id="exportDialog" class="export-dialog">
+    <h3>Export event</h3>
+    <p>Choose where to export this event.</p>
+    <div class="export-actions">
+      <button class="cancel" type="button" onclick="closeExportDialog()">Cancel</button>
+      <button type="button" onclick="exportChoice('ics')">Apple Calendar (ICS)</button>
+      <button type="button" onclick="exportChoice('google')">Google Calendar</button>
+    </div>
+  </dialog>
 
 <script>
   let state = { rosterData: [], yearFull: "", bidPeriod: "" };
@@ -243,10 +273,9 @@
   }
 
   function dollars(n){
-    // Show cents even for very small amounts.
-    // toFixed returns a fixed-point string with the specified decimals. [web:421]
     const v = Number.isFinite(n) ? n : 0;
     const sign = v < 0 ? "-" : "";
+    // toFixed renders fixed decimals for currency-like output. [web:421]
     return `${sign}$${Math.abs(v).toFixed(2)}`;
   }
 
@@ -285,7 +314,7 @@
         <td id="newD60-${i}" class="mono">-</td>
         <td id="gross-${i}" class="mono">$0.00</td>
         <td id="net-${i}" class="mono extra-net">$0.00</td>
-        <td><button class="export-btn" onclick="exportDay(${i})">🗓️ Export</button></td>
+        <td><button class="export-btn" onclick="openExportDialog(${i})">🗓️ Export</button></td>
       </tr>`;
     });
 
@@ -316,11 +345,10 @@
     let t2 = t2base;
     if (t2 < t1) t2 += 1440;
 
-    const deltaMins = t2 - t1;                 // sign-off extension in minutes
+    const deltaMins = t2 - t1;
     const finalDutyMins = row.origDuty + deltaMins;
     const finalD60Mins = finalDutyMins * 0.6;
 
-    // Convert to seconds and apply "max(credit, 0.6*duty)" before/after
     const creditSec = row.credit * 60;
     const d60_0_sec = row.origDuty * 60 * 0.6;
     const d60_1_sec = finalDutyMins * 60 * 0.6;
@@ -329,7 +357,7 @@
     const paid1Sec = Math.max(creditSec, d60_1_sec);
 
     let diffSec = paid1Sec - paid0Sec;
-    if (diffSec < 0.000001) diffSec = 0;      // remove floating noise
+    if (diffSec < 0.000001) diffSec = 0;
 
     const gross = (diffSec / 3600) * hourlyRate;
     const net = gross * taxMult;
@@ -357,6 +385,7 @@
     return `${y}${m}${d}`;
   }
 
+  // Google Calendar export (existing behaviour)
   function exportDay(i){
     const row = state.rosterData[i];
 
@@ -381,6 +410,7 @@
     const title = `${flag}DPC60 Margin ${marginText} | Sign Off Trigger for DPC60 ${triggerText} (Orig ${row.origSOff})`;
     const dates = `${yyyymmdd(startDate)}/${yyyymmdd(endDate)}`;
 
+    // action=TEMPLATE, text, dates is standard for Google Calendar event links. [web:109]
     const url =
       `https://calendar.google.com/calendar/render?action=TEMPLATE` +
       `&text=${encodeURIComponent(title)}` +
@@ -390,6 +420,92 @@
   }
 
   function exportToCalendar(){ state.rosterData.forEach((_, i) => exportDay(i)); }
+
+  // Modal export chooser (<dialog>)
+  let exportIndex = null;
+
+  function openExportDialog(i){
+    exportIndex = i;
+    const dlg = document.getElementById("exportDialog");
+
+    // showModal() displays the dialog as a modal. [web:464]
+    if (dlg && typeof dlg.showModal === "function") {
+      dlg.showModal();
+      return;
+    }
+
+    // Fallback if <dialog> unsupported: default to Google Calendar
+    exportDay(i);
+  }
+
+  function closeExportDialog(){
+    const dlg = document.getElementById("exportDialog");
+    if (dlg && dlg.open) dlg.close();
+    exportIndex = null;
+  }
+
+  function exportChoice(which){
+    const i = exportIndex;
+    closeExportDialog();
+    if (i === null || i === undefined) return;
+
+    if (which === "google") exportDay(i);
+    if (which === "ics") exportDayICS(i);
+  }
+
+  function exportDayICS(i){
+    const row = state.rosterData[i];
+
+    const year = parseInt(state.yearFull || "2026", 10);
+    const monthNum = monthMap[row.monKey].num;
+
+    // All-day event (same behaviour as Google export)
+    const start = new Date(Date.UTC(year, monthNum - 1, row.day, 0, 0, 0));
+    const end   = new Date(Date.UTC(year, monthNum - 1, row.day + 1, 0, 0, 0));
+
+    const newD60El = document.getElementById(`newD60-${i}`);
+    const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
+    const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
+
+    const marginMins = Math.abs(row.credit - d60Mins);
+    const marginText = formatTime(marginMins);
+
+    const trig = computeTriggerSignoff(row);
+    const triggerText = trig.already ? "Already" : trig.hhmm;
+
+    const ZERO_EPS_MIN = 0.5;
+    const flag = (marginMins <= ZERO_EPS_MIN) ? "🟠 [ZERO MARGIN] " : "";
+
+    const title = `${flag}DPC60 Margin ${marginText} | Trigger ${triggerText} (Orig ${row.origSOff})`;
+
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const ymd = (d) => `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}`;
+
+    const dtStamp = (() => {
+      const now = new Date();
+      return `${now.getUTCFullYear()}${pad2(now.getUTCMonth()+1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}${pad2(now.getUTCSeconds())}Z`;
+    })();
+
+    const uid = `dpc60-${year}-${monthNum}-${row.day}-${row.origSOff}@local`;
+
+    const ics =
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DPC60 Analyser//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${dtStamp}
+SUMMARY:${title.replace(/\n/g, " ")}
+DTSTART;VALUE=DATE:${ymd(start)}
+DTEND;VALUE=DATE:${ymd(end)}
+END:VEVENT
+END:VCALENDAR
+`;
+
+    const href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+    window.open(href, "_blank");
+  }
 
   function exportToEmail(){
     const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
