@@ -11,13 +11,13 @@
       --glass-border:rgba(0,0,0,0.08); --text-secondary:#86868b; --success-green:#16a34a;
     }
     body{font-family:'Inter',sans-serif;padding:40px 20px;background:var(--apple-bg);color:var(--aviation-black);-webkit-font-smoothing:antialiased;}
-    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1500px;margin:auto;border:1px solid var(--glass-border);}
+    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1600px;margin:auto;border:1px solid var(--glass-border);}
     h2{font-weight:700;text-align:center;margin:0 0 26px 0;font-size:28px;}
     .controls{display:flex;gap:16px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;}
     .input-group{display:flex;flex-direction:column;gap:8px;min-width:180px;}
     label{font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-secondary);}
     input[type="number"],input[type="text"]{padding:10px 14px;border:1px solid #d2d2d7;border-radius:10px;font-size:14px;background:white;}
-    textarea{width:100%;height:160px;padding:14px;border:1px solid #d2d2d7;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;box-sizing:border-box;margin-bottom:10px;white-space:pre;}
+    textarea{width:100%;height:170px;padding:14px;border:1px solid #d2d2d7;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;box-sizing:border-box;margin-bottom:10px;white-space:pre;}
     .hint{font-size:12px;color:var(--text-secondary);margin:0 0 16px 0;line-height:1.35;}
     .button-container{display:flex;justify-content:center;gap:12px;margin:18px 0;flex-wrap:wrap;}
     button{background:var(--aviation-black);color:white;border:none;padding:12px 22px;border-radius:12px;cursor:pointer;font-weight:600;transition:all .2s ease;}
@@ -35,6 +35,9 @@
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
     .export-btn{background:#3a3a3c;font-size:11px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;border-radius:12px;}
     .notice{padding:12px;color:var(--text-secondary);background:#fff;border:1px solid #e5e5e7;border-radius:12px;margin-top:12px;line-height:1.35;}
+
+    .trigger-ok{background:#e8f5e9;color:#2e7d32;border-radius:6px;padding:3px 8px;display:inline-block;font-weight:700;}
+    .trigger-need{background:#fff8e1;color:#ef6c00;border-radius:6px;padding:3px 8px;display:inline-block;font-weight:700;}
   </style>
 </head>
 
@@ -104,6 +107,14 @@
     return hh * 60 + mm;
   };
 
+  const formatHHMM = (mins) => {
+    // mins can exceed 1440; wrap for display
+    const m = ((mins % 1440) + 1440) % 1440;
+    const hh = Math.floor(m / 60);
+    const mm = m % 60;
+    return `${pad2(hh)}${pad2(mm)}`;
+  };
+
   const getMarginClass = (credit, d60) => {
     if (Math.abs(credit - d60) <= 0.5) return 'margin-green';
     return credit > d60 ? 'margin-amber' : 'margin-blue';
@@ -165,23 +176,40 @@
 
       const r = line.match(rptLine);
       if (r && currentDay && currentMonKey){
-        const duty = parseTimeHM(r[3]);   // from roster
-        const cred = parseTimeHM(r[4]);   // from roster
+        const duty = parseTimeHM(r[3]);
+        const cred = parseTimeHM(r[4]);
 
         const monAbbr = monthMap[currentMonKey]?.abbr || d[2];
         const prettyDate = state.yearFull ? `${currentDay} ${monAbbr} ${state.yearFull}` : `${currentDay} ${monAbbr}`;
 
         state.rosterData.push({
           prettyDate,
-          origSOff: r[2],     // sign-off (Rls) from roster
-          origDuty: duty,     // minutes from roster
-          credit: cred,       // minutes from roster
-          origD60: duty * 0.6 // minutes calculated
+          origSOff: r[2],     // roster sign-off (Rls)
+          origDuty: duty,     // roster duty minutes
+          credit: cred,       // roster credit minutes
+          origD60: duty * 0.6 // calculated
         });
       }
     }
 
     renderTable(ok);
+  }
+
+  function computeTriggerSignoffHHMM(row){
+    // Want: 0.6 * duty_new > credit  => duty_new > credit/0.6
+    // duty_new = origDuty + delta, delta is extra minutes added by extending sign-off.
+    // Solve minimal delta in minutes:
+    const minDutyToBeatCredit = Math.floor(row.credit / 0.6) + 1; // strict ">"
+    const deltaNeeded = minDutyToBeatCredit - row.origDuty;
+
+    // If already above credit, no extension needed.
+    if (deltaNeeded <= 0) return { label: "Already > credit", hhmm: row.origSOff, deltaNeeded: 0, already: true };
+
+    const origSoffMins = parseHHMM(row.origSOff);
+    if (origSoffMins === null) return { label: "-", hhmm: "-", deltaNeeded: null, already: false };
+
+    const triggerSoffMins = origSoffMins + deltaNeeded;
+    return { label: formatHHMM(triggerSoffMins), hhmm: formatHHMM(triggerSoffMins), deltaNeeded, already: false };
   }
 
   function renderTable(monthYearDetected){
@@ -198,11 +226,18 @@
 
     let html = `${notice}<table><thead><tr>
       <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
+      <th>S-Off to Trigger</th>
       <th>New S-Off</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
     </tr></thead><tbody>`;
 
     state.rosterData.forEach((row, i) => {
       const margin = Math.abs(row.credit - row.origD60);
+      const trig = computeTriggerSignoffHHMM(row);
+
+      const triggerCell = trig.already
+        ? `<span class="trigger-ok">Already</span>`
+        : `<span class="trigger-need mono">${trig.hhmm}</span>`;
+
       html += `<tr>
         <td class="mono" style="white-space:nowrap">${row.prettyDate}</td>
         <td class="mono">${row.origSOff}</td>
@@ -210,6 +245,8 @@
         <td class="mono">${formatTime(row.credit)}</td>
         <td class="mono">${formatTime(row.origD60)}</td>
         <td id="marginCell-${i}"><span class="mono ${getMarginClass(row.credit, row.origD60)}">${formatTime(margin)}</span></td>
+        <td>${triggerCell}</td>
+
         <td><input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
         <td id="newDuty-${i}" class="mono">-</td>
         <td id="newD60-${i}" class="mono">-</td>
@@ -231,7 +268,7 @@
 
     const row = state.rosterData[index];
 
-    // Defaults kept (353 and 47)
+    // Defaults kept
     const rateIn = parseFloat(document.getElementById('hourlyRate').value);
     const hourlyRate = Number.isFinite(rateIn) ? rateIn : 353;
 
@@ -246,23 +283,22 @@
     let t2 = t2base;
     if (t2 < t1) t2 += 1440; // midnight rollover
 
-    const delta = t2 - t1;                  // minutes
-    const finalDuty = row.origDuty + delta; // minutes
-    const finalD60 = finalDuty * 0.6;       // minutes
+    const delta = t2 - t1;
+    const finalDuty = row.origDuty + delta;
+    const finalD60 = finalDuty * 0.6;
 
-    // Pay only if new .6 > credit AND > original .6 duty
+    // Only pay if new .6 > credit AND > original .6
     const shouldPay = (finalD60 > row.credit) && (finalD60 > row.origD60);
 
-    // Pay only the portion above BOTH thresholds [web:78]
-    const payFromMins = Math.max(row.credit, row.origD60);
+    // Pay only portion above BOTH thresholds
+    const payFromMins = Math.max(row.credit, row.origD60); // [web:78]
     const diffMins = shouldPay ? (finalD60 - payFromMins) : 0;
 
-    // Money in integer cents to avoid float rounding issues [web:97]
-    // Rounding policy for fractional minutes: round UP to the next whole minute.
-    const payableMins = Math.max(0, Math.ceil(diffMins));
-
+    // Money in cents, pay partial minutes rounded up
+    const payableMins = Math.max(0, Math.ceil(diffMins)); // [web:132]
     const rateCentsPerHour = Math.round(hourlyRate * 100);
-    const grossCents = Math.round((payableMins * rateCentsPerHour) / 60); // minutes -> hours [web:99]
+
+    const grossCents = Math.round((payableMins * rateCentsPerHour) / 60);
     const netCents = Math.round(grossCents * taxMult);
 
     document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDuty);
@@ -280,11 +316,10 @@
     inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
-  // ---- Export: "DPC60 Margin <margin>" ----
+  // Export: title "DPC60 Margin <margin>" (margin between credit and current .6 duty)
   function exportDay(i){
     const row = state.rosterData[i];
 
-    // Use NEW .6 if available; otherwise use original .6
     const newD60El = document.getElementById(`newD60-${i}`);
     const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
     const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
