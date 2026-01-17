@@ -177,14 +177,18 @@
     return true;
   }
 
-  function detectYear(text){
-    const dated = text.match(/\bDATED\s+\d{1,2}[A-Za-z]{3}(\d{2,4})\b/i);
-    const any = text.match(/\b\d{1,2}[A-Za-z]{3}(\d{2,4})\b/i);
-    const m = dated || any;
+  // Year detection: use the header timestamps like "17Jan26 1255" (ARMS/QANTAS lines).
+  // Prefer "ARMS crew ..." then fallback to "QANTAS AIRWAYS LIMITED ..." then any "ddMonYY hhmm". [web:178]
+  function detectYearFromHeader(text){
+    const arms = text.match(/\bARMS\s+crew\b[\s\S]*?\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/i);
+    const qf = text.match(/\bQANTAS\s+AIRWAYS\s+LIMITED\b[\s\S]*?\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/i);
+    const any = text.match(/\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/);
+
+    const m = arms || qf || any;
     if (!m) return false;
 
-    const yy = m[1];
-    state.yearFull = (yy.length === 4) ? yy : `20${yy}`;
+    const yy = m[3];           // "26"
+    state.yearFull = `20${yy}`; // "2026"
     return true;
   }
 
@@ -197,7 +201,10 @@
     state.bidPeriod = "";
 
     const bpOk = detectBidPeriod(text);
-    const yearOk = detectYear(text);
+    const yearOk = detectYearFromHeader(text);
+
+    // hard default to 2026 if not found (so UI never shows 2025 by accident)
+    if (!yearOk) state.yearFull = "2026";
 
     document.getElementById('bidPeriod').value = bpOk ? `Bid Period ${state.bidPeriod}` : "";
 
@@ -222,7 +229,7 @@
         state.rosterData.push({
           day: parseInt(currentDay, 10),
           monKey: currentMonKey,
-          dateLabel: `${currentDay} ${monthMap[currentMonKey].abbr} ${state.yearFull || ""}`.trim(),
+          dateLabel: `${currentDay} ${monthMap[currentMonKey].abbr} ${state.yearFull}`.trim(),
           origSOff: r[2],
           origDuty: duty,
           credit: cred,
@@ -231,7 +238,7 @@
       }
     }
 
-    renderTable({ yearDetected: yearOk });
+    renderTable({ yearDetected: true });
   }
 
   function computeTriggerSignoff(row){
@@ -253,12 +260,7 @@
       return;
     }
 
-    let notice = "";
-    if (!yearDetected){
-      notice = `<div class="notice">Year not detected from “DATED …”. Dates may show day+month only.</div>`;
-    }
-
-    let html = `${notice}<table><thead><tr>
+    let html = `<table><thead><tr>
       <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
       <th>S-Off to Trigger</th>
       <th>New S-Off</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
@@ -349,7 +351,6 @@
     inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
-  // Google Calendar all-day event: dates=YYYYMMDD/YYYYMMDD (+1 day end) [web:112]
   function yyyymmdd(dateObj){
     const y = dateObj.getFullYear();
     const m = pad2(dateObj.getMonth() + 1);
@@ -360,7 +361,7 @@
   function exportDay(i){
     const row = state.rosterData[i];
 
-    const year = parseInt(state.yearFull || String(new Date().getFullYear()), 10);
+    const year = parseInt(state.yearFull || "2026", 10);
     const monthNum = monthMap[row.monKey].num;
     const startDate = new Date(year, monthNum - 1, row.day);
     const endDate = new Date(year, monthNum - 1, row.day + 1);
@@ -386,7 +387,6 @@
 
   function exportToCalendar(){ state.rosterData.forEach((_, i) => exportDay(i)); }
 
-  // mailto subject/body should be encoded using encodeURIComponent. [web:123]
   function exportToEmail(){
     const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
     const subject = `DPC60 Analysis - ${bpLabel}`;
