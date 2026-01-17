@@ -165,18 +165,18 @@
 
       const r = line.match(rptLine);
       if (r && currentDay && currentMonKey){
-        const duty = parseTimeHM(r[3]);
-        const cred = parseTimeHM(r[4]);
+        const duty = parseTimeHM(r[3]);   // from roster
+        const cred = parseTimeHM(r[4]);   // from roster
 
         const monAbbr = monthMap[currentMonKey]?.abbr || d[2];
         const prettyDate = state.yearFull ? `${currentDay} ${monAbbr} ${state.yearFull}` : `${currentDay} ${monAbbr}`;
 
         state.rosterData.push({
           prettyDate,
-          origSOff: r[2],     // Rls is sign-off (from roster)
-          origDuty: duty,     // minutes (from roster)
-          credit: cred,       // minutes (from roster)
-          origD60: duty * 0.6 // minutes (calculated)
+          origSOff: r[2],     // sign-off (Rls) from roster
+          origDuty: duty,     // minutes from roster
+          credit: cred,       // minutes from roster
+          origD60: duty * 0.6 // minutes calculated
         });
       }
     }
@@ -232,8 +232,8 @@
     const row = state.rosterData[index];
 
     // Defaults kept (353 and 47)
-    const rate = parseFloat(document.getElementById('hourlyRate').value);
-    const hourlyRate = Number.isFinite(rate) ? rate : 353;
+    const rateIn = parseFloat(document.getElementById('hourlyRate').value);
+    const hourlyRate = Number.isFinite(rateIn) ? rateIn : 353;
 
     const taxRateIn = parseFloat(document.getElementById('taxRate').value);
     const taxRate = Number.isFinite(taxRateIn) ? taxRateIn : 47;
@@ -246,21 +246,19 @@
     let t2 = t2base;
     if (t2 < t1) t2 += 1440; // midnight rollover
 
-    const delta = t2 - t1;                 // minutes
+    const delta = t2 - t1;                  // minutes
     const finalDuty = row.origDuty + delta; // minutes
     const finalD60 = finalDuty * 0.6;       // minutes
 
-    // Only pay if new .6 > credit AND > original .6
+    // Pay only if new .6 > credit AND > original .6 duty
     const shouldPay = (finalD60 > row.credit) && (finalD60 > row.origD60);
 
-    // Pay only the portion above BOTH thresholds
-    const payFromMins = Math.max(row.credit, row.origD60); // minutes threshold [web:78]
-    const diffMins = shouldPay ? (finalD60 - payFromMins) : 0; // minutes (may be fractional)
+    // Pay only the portion above BOTH thresholds [web:78]
+    const payFromMins = Math.max(row.credit, row.origD60);
+    const diffMins = shouldPay ? (finalD60 - payFromMins) : 0;
 
-    // Money: do it in integer cents to avoid float rounding issues in JS [web:97][web:90]
-    // Decide rounding policy for fractional minutes:
-    // - ceil: if you earn part of a minute, you get paid the whole minute.
-    // - round/floor: change if your agreement differs.
+    // Money in integer cents to avoid float rounding issues [web:97]
+    // Rounding policy for fractional minutes: round UP to the next whole minute.
     const payableMins = Math.max(0, Math.ceil(diffMins));
 
     const rateCentsPerHour = Math.round(hourlyRate * 100);
@@ -282,11 +280,23 @@
     inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
+  // ---- Export: "DPC60 Margin <margin>" ----
   function exportDay(i){
     const row = state.rosterData[i];
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=DPC60+Extension+${encodeURIComponent(row.prettyDate)}`;
+
+    // Use NEW .6 if available; otherwise use original .6
+    const newD60El = document.getElementById(`newD60-${i}`);
+    const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
+    const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
+
+    const marginMins = Math.abs(row.credit - d60Mins);
+    const marginText = formatTime(marginMins);
+
+    const title = `DPC60 Margin ${marginText}`;
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}`;
     window.open(url, '_blank');
   }
+
   function exportToCalendar(){ state.rosterData.forEach((_, i) => exportDay(i)); }
 
   function exportToEmail(){
