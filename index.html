@@ -18,15 +18,18 @@
     .input-group{display:flex;flex-direction:column;gap:8px;min-width:180px;}
     label{font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-secondary);}
     input[type="number"],input[type="text"]{padding:10px 14px;border:1px solid #d2d2d7;border-radius:10px;font-size:14px;background:white;}
-    textarea{width:100%;height:170px;padding:14px;border:1px solid #d2d2d7;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;box-sizing:border-box;margin-bottom:10px;white-space:pre;}
-    .hint{font-size:12px;color:var(--text-secondary);margin:10px 0 12px 0;line-height:1.35;}
+    textarea{
+      width:100%;height:170px;padding:14px;border:1px solid #d2d2d7;border-radius:12px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+      font-size:12px;box-sizing:border-box;margin-bottom:10px;white-space:pre;
+    }
+
     .button-container{display:flex;justify-content:center;gap:12px;margin:16px 0;flex-wrap:wrap;}
     button{background:var(--aviation-black);color:white;border:none;padding:12px 22px;border-radius:12px;cursor:pointer;font-weight:600;transition:all .2s ease;}
     button:hover{opacity:.92;transform:translateY(-1px);}
     .btn-secondary{background:var(--accent-red);}
-    .btn-outline{background:transparent;color:var(--aviation-black);border:1px solid var(--aviation-black);}
 
-    /* Legend bar (like screenshot) */
+    /* Legend bar */
     .legend{
       display:flex;
       gap:14px;
@@ -37,7 +40,7 @@
       border:1px solid #e5e5e7;
       border-radius:12px;
       padding:10px 12px;
-      margin:10px 0 6px 0;
+      margin:10px 0 14px 0;
     }
     .legend-item{
       display:flex;
@@ -109,7 +112,8 @@
       </div>
     </div>
 
-    <textarea id="rosterInput" placeholder="Paste the full WebCis roster text here (including the pattern section at the bottom)."></textarea>
+    <textarea id="rosterInput"
+      placeholder='In WebCis Select "Roster" then "Send My Roster". Send to your email then copy and paste the entire text in here.'></textarea>
 
     <div class="legend">
       <div class="legend-item">
@@ -126,14 +130,8 @@
       </div>
     </div>
 
-    <div class="hint">
-      Reads pattern summary lines containing “Rpt #### Rls #### … Duty … Cred …”.<br>
-      New S-Off format: HHMM (24h). Example: 2315.
-    </div>
-
     <div class="button-container">
       <button onclick="processRoster()">Process Roster</button>
-      <button class="btn-outline" onclick="clearRoster()">Clear</button>
       <button class="btn-secondary" onclick="exportToCalendar()">Export All to Calendar</button>
       <button class="btn-secondary" onclick="exportToEmail()">📧 Email Results</button>
     </div>
@@ -186,14 +184,6 @@
     const sign = cents < 0 ? "-" : "";
     const abs = Math.abs(cents);
     return `${sign}$${(abs / 100).toFixed(2)}`;
-  }
-
-  function clearRoster(){
-    document.getElementById('rosterInput').value = '';
-    document.getElementById('tableContainer').innerHTML = '';
-    document.getElementById('bidPeriod').value = '';
-    state.rosterData = [];
-    state.yearFull = "";
   }
 
   function detectYear(text){
@@ -254,9 +244,8 @@
     const minDutyToBeatCredit = Math.floor(row.credit / 0.6) + 1;
     const deltaNeeded = minDutyToBeatCredit - row.origDuty;
 
-    if (deltaNeeded <= 0) {
-      return { already:true, hhmm: row.origSOff, deltaNeeded: 0 };
-    }
+    if (deltaNeeded <= 0) return { already:true, hhmm: row.origSOff, deltaNeeded: 0 };
+
     const origSoffMins = parseHHMM(row.origSOff);
     if (origSoffMins === null) return { already:false, hhmm:"-", deltaNeeded:null };
 
@@ -362,7 +351,7 @@
     inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
-  // Calendar export: all-day event on correct date, title includes margin + trigger time. [web:112][web:107]
+  // Calendar export: all-day event on correct date, title includes trigger time + original time. [web:106][web:123]
   function yyyymmdd(dateObj){
     const y = dateObj.getFullYear();
     const m = pad2(dateObj.getMonth() + 1);
@@ -373,7 +362,6 @@
   function exportDay(i){
     const row = state.rosterData[i];
 
-    // Create a proper Date so month-end rollover is correct
     const year = parseInt(state.yearFull || String(new Date().getFullYear()), 10);
     const monthNum = monthMap[row.monKey].num; // 1-12
     const startDate = new Date(year, monthNum - 1, row.day);
@@ -385,11 +373,10 @@
     const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
     const marginText = formatTime(Math.abs(row.credit - d60Mins));
 
-    // trigger sign-off for this row
     const trig = computeTriggerSignoff(row);
     const triggerText = trig.already ? "Already" : trig.hhmm;
 
-    const title = `DPC60 Margin ${marginText} | Trigger ${triggerText}`;
+    const title = `DPC60 Margin ${marginText} | Sign Off Trigger for DPC60 ${triggerText} (Orig ${row.origSOff})`;
     const dates = `${yyyymmdd(startDate)}/${yyyymmdd(endDate)}`;
 
     const url =
