@@ -37,6 +37,7 @@
     .legend-dot{width:12px;height:12px;border-radius:4px;display:inline-block;flex:0 0 auto;border:1px solid rgba(0,0,0,0.14);background:#f2f2f2;}
     .dot-green{background:#e8f5e9;border-color:rgba(22,163,74,0.35);}
     .dot-amber{background:#fff8e1;border-color:rgba(239,108,0,0.35);}
+    .dot-blue{background:#e3f2fd;border-color:rgba(21,101,192,0.35);}
     .dot-magenta{background:rgba(209,0,209,0.10);border-color:rgba(209,0,209,0.35);}
 
     table{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;}
@@ -102,6 +103,10 @@
       <div class="legend-item">
         <span class="legend-dot dot-amber"></span>
         <span><strong>Amber:</strong> Credit hours are paid unless the margin is extended.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot dot-blue"></span>
+        <span><strong>Blue:</strong> 0.6 duty is greater than credit (0.6 duty is the paid value).</span>
       </div>
       <div class="legend-item">
         <span class="legend-dot dot-magenta"></span>
@@ -315,14 +320,13 @@
     const finalDuty = row.origDuty + delta;
     const finalD60 = finalDuty * 0.6;
 
-    // Prevent phantom "1 minute" pay when display rounds to equality:
-    // treat anything <= 0.5 min above threshold as equal (no pay).
+    // Tolerance to avoid "1 minute pay" when display shows equality
     const EPS_MIN = 0.5;
 
     const shouldPay = (finalD60 > row.credit + EPS_MIN) && (finalD60 > row.origD60 + EPS_MIN);
     const payFromMins = Math.max(row.credit, row.origD60);
     const diffMinsRaw = finalD60 - payFromMins;
-    const diffMins = shouldPay && (diffMinsRaw > EPS_MIN) ? diffMinsRaw : 0;
+    const diffMins = (shouldPay && diffMinsRaw > EPS_MIN) ? diffMinsRaw : 0;
 
     const payableMins = Math.max(0, Math.ceil(diffMins));
     const rateCentsPerHour = Math.round(hourlyRate * 100);
@@ -345,8 +349,7 @@
     inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
-  // Calendar export: all-day event on correct date; title includes trigger time + original time.
-  // Uses encodeURIComponent for query parameters. [web:123]
+  // Google Calendar all-day event: dates=YYYYMMDD/YYYYMMDD (+1 day end) [web:112]
   function yyyymmdd(dateObj){
     const y = dateObj.getFullYear();
     const m = pad2(dateObj.getMonth() + 1);
@@ -383,8 +386,7 @@
 
   function exportToCalendar(){ state.rosterData.forEach((_, i) => exportDay(i)); }
 
-  // Email export: subject includes Bid Period; body includes trigger sign-off.
-  // mailto scheme uses subject/body parameters; encodeURIComponent is required. [web:206][web:123]
+  // mailto subject/body should be encoded using encodeURIComponent. [web:123]
   function exportToEmail(){
     const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
     const subject = `DPC60 Analysis - ${bpLabel}`;
