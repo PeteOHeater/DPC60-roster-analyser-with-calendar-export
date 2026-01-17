@@ -59,7 +59,7 @@
 
     <textarea id="rosterInput" placeholder="Paste the full WebCis roster text here (including the pattern section at the bottom)."></textarea>
     <div class="hint">
-      Reads the pattern summary lines containing “Rpt #### Rls #### … Duty … Cred …”.<br>
+      Reads pattern summary lines containing “Rpt #### Rls #### … Duty … Cred …”.<br>
       New S-Off format: HHMM (24h). Example: 2315.
     </div>
 
@@ -109,6 +109,12 @@
     return credit > d60 ? 'margin-amber' : 'margin-blue';
   };
 
+  function dollarsFromCents(cents){
+    const sign = cents < 0 ? "-" : "";
+    const abs = Math.abs(cents);
+    return `${sign}$${(abs / 100).toFixed(2)}`;
+  }
+
   function clearRoster(){
     document.getElementById('rosterInput').value = '';
     document.getElementById('tableContainer').innerHTML = '';
@@ -144,10 +150,7 @@
     const ok = detectMonthYear(text);
     document.getElementById('bidPeriod').value = ok ? `${state.monthAbbr} ${state.yearFull}` : "";
 
-    // Date line (e.g. "15Feb")
     const dateLine = /^\s*(\d{1,2})([A-Za-z]{3})\b/;
-
-    // Summary line with duty/credit (last two tokens are Duty and Cred)
     const rptLine = /^\s*Rpt\s+(\d{4})\s+Rls\s+(\d{4}).*?(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s*$/;
 
     let currentDay = null;
@@ -170,10 +173,10 @@
 
         state.rosterData.push({
           prettyDate,
-          origSOff: r[2],     // Rls is sign-off
-          origDuty: duty,
-          credit: cred,
-          origD60: duty * 0.6
+          origSOff: r[2],     // Rls is sign-off (from roster)
+          origDuty: duty,     // minutes (from roster)
+          credit: cred,       // minutes (from roster)
+          origD60: duty * 0.6 // minutes (calculated)
         });
       }
     }
@@ -221,16 +224,20 @@
   }
 
   function calculateAdjustment(index, newValRaw){
-    // sanitize to digits
     const inputs = document.querySelectorAll('.adj-input');
     const newVal = (newValRaw || "").replace(/\D/g,"").slice(0,4);
     if (inputs[index] && inputs[index].value !== newVal) inputs[index].value = newVal;
     if (newVal.length !== 4) return;
 
     const row = state.rosterData[index];
-    const rate = parseFloat(document.getElementById('hourlyRate').value) || 353;
-    const taxRate = parseFloat(document.getElementById('taxRate').value);
-    const taxMult = 1 - ((Number.isFinite(taxRate) ? taxRate : 47) / 100);
+
+    // Defaults kept (353 and 47)
+    const rate = parseFloat(document.getElementById('hourlyRate').value);
+    const hourlyRate = Number.isFinite(rate) ? rate : 353;
+
+    const taxRateIn = parseFloat(document.getElementById('taxRate').value);
+    const taxRate = Number.isFinite(taxRateIn) ? taxRateIn : 47;
+    const taxMult = 1 - (taxRate / 100);
 
     const t1 = parseHHMM(row.origSOff);
     const t2base = parseHHMM(newVal);
@@ -239,24 +246,31 @@
     let t2 = t2base;
     if (t2 < t1) t2 += 1440; // midnight rollover
 
-    const delta = t2 - t1;
-    const finalDuty = row.origDuty + delta;
-    const finalD60 = finalDuty * 0.6;
+    const delta = t2 - t1;                 // minutes
+    const finalDuty = row.origDuty + delta; // minutes
+    const finalD60 = finalDuty * 0.6;       // minutes
 
-    // Condition: only pay if new .6 > credit AND new .6 > original .6
+    // Only pay if new .6 > credit AND > original .6
     const shouldPay = (finalD60 > row.credit) && (finalD60 > row.origD60);
 
     // Pay only the portion above BOTH thresholds
-    const payFromMins = Math.max(row.credit, row.origD60);
-    const diffMins = shouldPay ? (finalD60 - payFromMins) : 0;
+    const payFromMins = Math.max(row.credit, row.origD60); // minutes threshold [web:78]
+    const diffMins = shouldPay ? (finalD60 - payFromMins) : 0; // minutes (may be fractional)
 
-    const gross = (diffMins / 60) * rate;
-    const net = gross * taxMult;
+    // Money: do it in integer cents to avoid float rounding issues in JS [web:97][web:90]
+    // Decide rounding policy for fractional minutes:
+    // - ceil: if you earn part of a minute, you get paid the whole minute.
+    // - round/floor: change if your agreement differs.
+    const payableMins = Math.max(0, Math.ceil(diffMins));
+
+    const rateCentsPerHour = Math.round(hourlyRate * 100);
+    const grossCents = Math.round((payableMins * rateCentsPerHour) / 60); // minutes -> hours [web:99]
+    const netCents = Math.round(grossCents * taxMult);
 
     document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDuty);
     document.getElementById(`newD60-${index}`).innerText = formatTime(finalD60);
-    document.getElementById(`gross-${index}`).innerText = `$${gross.toFixed(2)}`;
-    document.getElementById(`net-${index}`).innerText = `$${net.toFixed(2)}`;
+    document.getElementById(`gross-${index}`).innerText = dollarsFromCents(grossCents);
+    document.getElementById(`net-${index}`).innerText = dollarsFromCents(netCents);
 
     const mCell = document.getElementById(`marginCell-${index}`);
     const spanClass = `mono ${getMarginClass(row.credit, finalD60)}`;
