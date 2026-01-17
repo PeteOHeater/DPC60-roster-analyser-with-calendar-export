@@ -164,12 +164,6 @@
     return credit > d60 ? 'margin-amber' : 'margin-blue';
   };
 
-  function dollarsFromCents(cents){
-    const sign = cents < 0 ? "-" : "";
-    const abs = Math.abs(cents);
-    return `${sign}$${(abs / 100).toFixed(2)}`;
-  }
-
   function detectBidPeriod(text){
     const m = text.match(/\bBid\s*Period\s+(\d+)\b/i);
     if (!m) return false;
@@ -177,7 +171,6 @@
     return true;
   }
 
-  // Year detection: use header timestamps like "17Jan26 1255" from the ARMS/QANTAS lines.
   function detectYearFromHeader(text){
     const arms = text.match(/\bARMS\s+crew\b[\s\S]*?\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/i);
     const qf = text.match(/\bQANTAS\s+AIRWAYS\s+LIMITED\b[\s\S]*?\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/i);
@@ -202,7 +195,6 @@
     const yearOk = detectYearFromHeader(text);
 
     if (!yearOk) state.yearFull = "2026";
-
     document.getElementById('bidPeriod').value = bpOk ? `Bid Period ${state.bidPeriod}` : "";
 
     const dateLine = /^\s*(\d{1,2})([A-Za-z]{3})\b/;
@@ -250,6 +242,14 @@
     return { already:false, hhmm: formatHHMM(origSoffMins + deltaNeeded), deltaNeeded };
   }
 
+  function dollars(n){
+    // Show cents even for very small amounts.
+    // toFixed returns a fixed-point string with the specified decimals. [web:421]
+    const v = Number.isFinite(n) ? n : 0;
+    const sign = v < 0 ? "-" : "";
+    return `${sign}$${Math.abs(v).toFixed(2)}`;
+  }
+
   function renderTable(){
     if (!state.rosterData.length){
       document.getElementById('tableContainer').innerHTML =
@@ -293,6 +293,7 @@
     document.getElementById('tableContainer').innerHTML = html;
   }
 
+  // Second-perfect money: compute paid basis in seconds, then gross/net from seconds.
   function calculateAdjustment(index, newValRaw){
     const inputs = document.querySelectorAll('.adj-input');
     const newVal = (newValRaw || "").replace(/\D/g,"").slice(0,4);
@@ -315,32 +316,33 @@
     let t2 = t2base;
     if (t2 < t1) t2 += 1440;
 
-    const delta = t2 - t1;
-    const finalDuty = row.origDuty + delta;
-    const finalD60 = finalDuty * 0.6;
+    const deltaMins = t2 - t1;                 // sign-off extension in minutes
+    const finalDutyMins = row.origDuty + deltaMins;
+    const finalD60Mins = finalDutyMins * 0.6;
 
-    // Conservative pay: compute paid minutes before/after, then round DOWN (floor). [web:406]
-    const paid0 = Math.max(row.credit, row.origD60);
-    const paid1 = Math.max(row.credit, finalD60);
+    // Convert to seconds and apply "max(credit, 0.6*duty)" before/after
+    const creditSec = row.credit * 60;
+    const d60_0_sec = row.origDuty * 60 * 0.6;
+    const d60_1_sec = finalDutyMins * 60 * 0.6;
 
-    let diffMins = paid1 - paid0;
-    const EPS = 1e-6;
-    if (diffMins < EPS) diffMins = 0;
+    const paid0Sec = Math.max(creditSec, d60_0_sec);
+    const paid1Sec = Math.max(creditSec, d60_1_sec);
 
-    const payableMins = Math.max(0, Math.floor(diffMins));
+    let diffSec = paid1Sec - paid0Sec;
+    if (diffSec < 0.000001) diffSec = 0;      // remove floating noise
 
-    const rateCentsPerHour = Math.round(hourlyRate * 100);
-    const grossCents = Math.round((payableMins * rateCentsPerHour) / 60);
-    const netCents = Math.round(grossCents * taxMult);
+    const gross = (diffSec / 3600) * hourlyRate;
+    const net = gross * taxMult;
 
-    document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDuty);
-    document.getElementById(`newD60-${index}`).innerText = formatTime(finalD60);
-    document.getElementById(`gross-${index}`).innerText = dollarsFromCents(grossCents);
-    document.getElementById(`net-${index}`).innerText = dollarsFromCents(netCents);
+    document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDutyMins);
+    document.getElementById(`newD60-${index}`).innerText = formatTime(finalD60Mins);
+
+    document.getElementById(`gross-${index}`).innerText = dollars(gross);
+    document.getElementById(`net-${index}`).innerText = dollars(net);
 
     const mCell = document.getElementById(`marginCell-${index}`);
-    const spanClass = `mono ${getMarginClass(row.credit, finalD60)}`;
-    mCell.innerHTML = `<span class="${spanClass}">${formatTime(Math.abs(row.credit - finalD60))}</span>`;
+    const spanClass = `mono ${getMarginClass(row.credit, finalD60Mins)}`;
+    mCell.innerHTML = `<span class="${spanClass}">${formatTime(Math.abs(row.credit - finalD60Mins))}</span>`;
   }
 
   function updateAllCalculations(){
@@ -373,7 +375,6 @@
     const trig = computeTriggerSignoff(row);
     const triggerText = trig.already ? "Already" : trig.hhmm;
 
-    // Flag calendar title when margin is effectively 0:00 (emoji + text for safety).
     const ZERO_EPS_MIN = 0.5;
     const flag = (marginMins <= ZERO_EPS_MIN) ? "🟠 [ZERO MARGIN] " : "";
 
