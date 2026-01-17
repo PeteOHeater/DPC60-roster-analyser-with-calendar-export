@@ -9,6 +9,7 @@
     :root{
       --apple-bg:#f5f5f7; --aviation-black:#1d1d1f; --accent-red:#e21b22;
       --glass-border:rgba(0,0,0,0.08); --text-secondary:#86868b; --success-green:#16a34a;
+      --magenta:#d100d1;
     }
     body{font-family:'Inter',sans-serif;padding:40px 20px;background:var(--apple-bg);color:var(--aviation-black);-webkit-font-smoothing:antialiased;}
     .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1600px;margin:auto;border:1px solid var(--glass-border);}
@@ -33,11 +34,29 @@
     .extra-net{color:var(--success-green);font-weight:700;}
     .adj-input{width:86px;padding:7px 8px;border:2px solid var(--accent-red);border-radius:10px;text-align:center;font-weight:700;}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+
     .export-btn{background:#3a3a3c;font-size:11px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;border-radius:12px;}
     .notice{padding:12px;color:var(--text-secondary);background:#fff;border:1px solid #e5e5e7;border-radius:12px;margin-top:12px;line-height:1.35;}
 
-    .trigger-ok{background:#e8f5e9;color:#2e7d32;border-radius:6px;padding:3px 8px;display:inline-block;font-weight:700;}
-    .trigger-need{background:#fff8e1;color:#ef6c00;border-radius:6px;padding:3px 8px;display:inline-block;font-weight:700;}
+    /* Trigger column styling (magenta) */
+    .trigger-pill{
+      background: rgba(209,0,209,0.10);
+      color: var(--magenta);
+      border: 1px solid rgba(209,0,209,0.35);
+      border-radius: 8px;
+      padding: 3px 8px;
+      display: inline-block;
+      font-weight: 800;
+    }
+    .trigger-ok{
+      background: rgba(22,163,74,0.08);
+      color: #167a3b;
+      border: 1px solid rgba(22,163,74,0.25);
+      border-radius: 8px;
+      padding: 3px 8px;
+      display: inline-block;
+      font-weight: 800;
+    }
   </style>
 </head>
 
@@ -77,12 +96,12 @@
   </div>
 
 <script>
-  let state = { rosterData: [], monthAbbr: "", yearFull: "" };
+  let state = { rosterData: [], yearFull: "" };
 
   const monthMap = {
-    jan:{abbr:"Jan"}, feb:{abbr:"Feb"}, mar:{abbr:"Mar"}, apr:{abbr:"Apr"},
-    may:{abbr:"May"}, jun:{abbr:"Jun"}, jul:{abbr:"Jul"}, aug:{abbr:"Aug"},
-    sep:{abbr:"Sep"}, oct:{abbr:"Oct"}, nov:{abbr:"Nov"}, dec:{abbr:"Dec"}
+    jan:{abbr:"Jan", num:1}, feb:{abbr:"Feb", num:2}, mar:{abbr:"Mar", num:3}, apr:{abbr:"Apr", num:4},
+    may:{abbr:"May", num:5}, jun:{abbr:"Jun", num:6}, jul:{abbr:"Jul", num:7}, aug:{abbr:"Aug", num:8},
+    sep:{abbr:"Sep", num:9}, oct:{abbr:"Oct", num:10}, nov:{abbr:"Nov", num:11}, dec:{abbr:"Dec", num:12}
   };
 
   const pad2 = (n) => String(n).padStart(2,'0');
@@ -108,11 +127,8 @@
   };
 
   const formatHHMM = (mins) => {
-    // mins can exceed 1440; wrap for display
     const m = ((mins % 1440) + 1440) % 1440;
-    const hh = Math.floor(m / 60);
-    const mm = m % 60;
-    return `${pad2(hh)}${pad2(mm)}`;
+    return `${pad2(Math.floor(m / 60))}${pad2(m % 60)}`;
   };
 
   const getMarginClass = (credit, d60) => {
@@ -131,21 +147,17 @@
     document.getElementById('tableContainer').innerHTML = '';
     document.getElementById('bidPeriod').value = '';
     state.rosterData = [];
-    state.monthAbbr = "";
     state.yearFull = "";
   }
 
-  function detectMonthYear(text){
-    const dated = text.match(/\bDATED\s+(\d{1,2})([A-Za-z]{3})(\d{2,4})\b/i);
-    const any = text.match(/\b(\d{1,2})([A-Za-z]{3})(\d{2,4})\b/i);
+  function detectYear(text){
+    // Prefer "DATED 15Feb26" at bottom; else any ddMonYY/ddMonYYYY token
+    const dated = text.match(/\bDATED\s+\d{1,2}[A-Za-z]{3}(\d{2,4})\b/i);
+    const any = text.match(/\b\d{1,2}[A-Za-z]{3}(\d{2,4})\b/i);
     const m = dated || any;
     if (!m) return false;
 
-    const monKey = m[2].toLowerCase();
-    if (!monthMap[monKey]) return false;
-
-    const yy = m[3];
-    state.monthAbbr = monthMap[monKey].abbr;
+    const yy = m[1];
     state.yearFull = (yy.length === 4) ? yy : `20${yy}`;
     return true;
   }
@@ -155,13 +167,15 @@
     const lines = text.split('\n');
 
     state.rosterData = [];
-    state.monthAbbr = "";
     state.yearFull = "";
 
-    const ok = detectMonthYear(text);
-    document.getElementById('bidPeriod').value = ok ? `${state.monthAbbr} ${state.yearFull}` : "";
+    const ok = detectYear(text);
+    document.getElementById('bidPeriod').value = ok ? state.yearFull : "";
 
+    // Date line: "15Feb"
     const dateLine = /^\s*(\d{1,2})([A-Za-z]{3})\b/;
+
+    // Summary line: "... Rpt 0505 Rls 1130 ... Duty 8:55 Cred 5:21"
     const rptLine = /^\s*Rpt\s+(\d{4})\s+Rls\s+(\d{4}).*?(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s*$/;
 
     let currentDay = null;
@@ -175,19 +189,18 @@
       }
 
       const r = line.match(rptLine);
-      if (r && currentDay && currentMonKey){
+      if (r && currentDay && currentMonKey && monthMap[currentMonKey]){
         const duty = parseTimeHM(r[3]);
         const cred = parseTimeHM(r[4]);
 
-        const monAbbr = monthMap[currentMonKey]?.abbr || d[2];
-        const prettyDate = state.yearFull ? `${currentDay} ${monAbbr} ${state.yearFull}` : `${currentDay} ${monAbbr}`;
-
         state.rosterData.push({
-          prettyDate,
-          origSOff: r[2],     // roster sign-off (Rls)
-          origDuty: duty,     // roster duty minutes
-          credit: cred,       // roster credit minutes
-          origD60: duty * 0.6 // calculated
+          day: parseInt(currentDay, 10),
+          monKey: currentMonKey,
+          dateLabel: `${currentDay} ${monthMap[currentMonKey].abbr} ${state.yearFull || ""}`.trim(),
+          origSOff: r[2],      // Rls
+          origDuty: duty,      // minutes
+          credit: cred,        // minutes
+          origD60: duty * 0.6  // minutes
         });
       }
     }
@@ -196,20 +209,17 @@
   }
 
   function computeTriggerSignoffHHMM(row){
-    // Want: 0.6 * duty_new > credit  => duty_new > credit/0.6
-    // duty_new = origDuty + delta, delta is extra minutes added by extending sign-off.
-    // Solve minimal delta in minutes:
-    const minDutyToBeatCredit = Math.floor(row.credit / 0.6) + 1; // strict ">"
+    // Need: 0.6*duty_new > credit  => duty_new > credit/0.6
+    const minDutyToBeatCredit = Math.floor(row.credit / 0.6) + 1;
     const deltaNeeded = minDutyToBeatCredit - row.origDuty;
 
-    // If already above credit, no extension needed.
-    if (deltaNeeded <= 0) return { label: "Already > credit", hhmm: row.origSOff, deltaNeeded: 0, already: true };
-
+    if (deltaNeeded <= 0) {
+      return { already:true, hhmm: row.origSOff, deltaNeeded: 0 };
+    }
     const origSoffMins = parseHHMM(row.origSOff);
-    if (origSoffMins === null) return { label: "-", hhmm: "-", deltaNeeded: null, already: false };
+    if (origSoffMins === null) return { already:false, hhmm:"-", deltaNeeded:null };
 
-    const triggerSoffMins = origSoffMins + deltaNeeded;
-    return { label: formatHHMM(triggerSoffMins), hhmm: formatHHMM(triggerSoffMins), deltaNeeded, already: false };
+    return { already:false, hhmm: formatHHMM(origSoffMins + deltaNeeded), deltaNeeded };
   }
 
   function renderTable(monthYearDetected){
@@ -221,7 +231,7 @@
 
     let notice = "";
     if (!monthYearDetected){
-      notice = `<div class="notice">Month/year not detected from “DATED …”. Dates may show day+month only.</div>`;
+      notice = `<div class="notice">Year not detected from “DATED …”. Dates may show day+month only.</div>`;
     }
 
     let html = `${notice}<table><thead><tr>
@@ -234,18 +244,18 @@
       const margin = Math.abs(row.credit - row.origD60);
       const trig = computeTriggerSignoffHHMM(row);
 
-      const triggerCell = trig.already
+      const triggerHTML = trig.already
         ? `<span class="trigger-ok">Already</span>`
-        : `<span class="trigger-need mono">${trig.hhmm}</span>`;
+        : `<span class="trigger-pill mono">${trig.hhmm}</span>`;
 
       html += `<tr>
-        <td class="mono" style="white-space:nowrap">${row.prettyDate}</td>
+        <td class="mono" style="white-space:nowrap">${row.dateLabel}</td>
         <td class="mono">${row.origSOff}</td>
         <td class="mono" style="color:var(--text-secondary)">${formatTime(row.origDuty)}</td>
         <td class="mono">${formatTime(row.credit)}</td>
         <td class="mono">${formatTime(row.origD60)}</td>
         <td id="marginCell-${i}"><span class="mono ${getMarginClass(row.credit, row.origD60)}">${formatTime(margin)}</span></td>
-        <td>${triggerCell}</td>
+        <td>${triggerHTML}</td>
 
         <td><input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
         <td id="newDuty-${i}" class="mono">-</td>
@@ -268,7 +278,6 @@
 
     const row = state.rosterData[index];
 
-    // Defaults kept
     const rateIn = parseFloat(document.getElementById('hourlyRate').value);
     const hourlyRate = Number.isFinite(rateIn) ? rateIn : 353;
 
@@ -281,21 +290,17 @@
     if (t1 === null || t2base === null) return;
 
     let t2 = t2base;
-    if (t2 < t1) t2 += 1440; // midnight rollover
+    if (t2 < t1) t2 += 1440;
 
     const delta = t2 - t1;
     const finalDuty = row.origDuty + delta;
     const finalD60 = finalDuty * 0.6;
 
-    // Only pay if new .6 > credit AND > original .6
     const shouldPay = (finalD60 > row.credit) && (finalD60 > row.origD60);
-
-    // Pay only portion above BOTH thresholds
-    const payFromMins = Math.max(row.credit, row.origD60); // [web:78]
+    const payFromMins = Math.max(row.credit, row.origD60);
     const diffMins = shouldPay ? (finalD60 - payFromMins) : 0;
 
-    // Money in cents, pay partial minutes rounded up
-    const payableMins = Math.max(0, Math.ceil(diffMins)); // [web:132]
+    const payableMins = Math.max(0, Math.ceil(diffMins));
     const rateCentsPerHour = Math.round(hourlyRate * 100);
 
     const grossCents = Math.round((payableMins * rateCentsPerHour) / 60);
@@ -316,19 +321,33 @@
     inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
-  // Export: title "DPC60 Margin <margin>" (margin between credit and current .6 duty)
+  // --- Calendar export with correct DATE ---
+  // For all-day events, Google expects dates=YYYYMMDD/YYYYMMDD (end date is exclusive). [web:141][web:112]
+  function yyyymmdd(year, monthNum, day){
+    return `${year}${pad2(monthNum)}${pad2(day)}`;
+  }
+
   function exportDay(i){
     const row = state.rosterData[i];
+    const year = state.yearFull || String(new Date().getFullYear());
+    const monthNum = monthMap[row.monKey].num;
 
+    // margin between credit and current .6 duty (new if entered else original)
     const newD60El = document.getElementById(`newD60-${i}`);
     const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
     const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
 
-    const marginMins = Math.abs(row.credit - d60Mins);
-    const marginText = formatTime(marginMins);
+    const marginText = formatTime(Math.abs(row.credit - d60Mins));
+
+    const start = yyyymmdd(year, monthNum, row.day);
+    const end = yyyymmdd(year, monthNum, row.day + 1); // simple +1 day (OK within a month for typical use)
 
     const title = `DPC60 Margin ${marginText}`;
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}`;
+    const url =
+      `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+      `&text=${encodeURIComponent(title)}` +
+      `&dates=${start}/${end}`;
+
     window.open(url, '_blank');
   }
 
@@ -336,7 +355,7 @@
 
   function exportToEmail(){
     let body = `DPC60 ANALYSIS\n\n`;
-    state.rosterData.forEach(r => body += `${r.prettyDate}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`);
+    state.rosterData.forEach(r => body += `${r.dateLabel}: Margin ${formatTime(Math.abs(r.credit - r.origD60))}\n`);
     window.location.href = `mailto:?subject=Roster Analysis&body=${encodeURIComponent(body)}`;
   }
 </script>
