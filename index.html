@@ -12,19 +12,50 @@
       --magenta:#d100d1;
     }
     body{font-family:'Inter',sans-serif;padding:40px 20px;background:var(--apple-bg);color:var(--aviation-black);-webkit-font-smoothing:antialiased;}
-    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1600px;margin:auto;border:1px solid var(--glass-border);}
-    h2{font-weight:700;text-align:center;margin:0 0 26px 0;font-size:28px;}
-    .controls{display:flex;gap:16px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;}
+    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1700px;margin:auto;border:1px solid var(--glass-border);}
+    h2{font-weight:700;text-align:center;margin:0 0 22px 0;font-size:28px;}
+    .controls{display:flex;gap:16px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
     .input-group{display:flex;flex-direction:column;gap:8px;min-width:180px;}
     label{font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-secondary);}
     input[type="number"],input[type="text"]{padding:10px 14px;border:1px solid #d2d2d7;border-radius:10px;font-size:14px;background:white;}
     textarea{width:100%;height:170px;padding:14px;border:1px solid #d2d2d7;border-radius:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;box-sizing:border-box;margin-bottom:10px;white-space:pre;}
-    .hint{font-size:12px;color:var(--text-secondary);margin:0 0 16px 0;line-height:1.35;}
-    .button-container{display:flex;justify-content:center;gap:12px;margin:18px 0;flex-wrap:wrap;}
+    .hint{font-size:12px;color:var(--text-secondary);margin:10px 0 12px 0;line-height:1.35;}
+    .button-container{display:flex;justify-content:center;gap:12px;margin:16px 0;flex-wrap:wrap;}
     button{background:var(--aviation-black);color:white;border:none;padding:12px 22px;border-radius:12px;cursor:pointer;font-weight:600;transition:all .2s ease;}
     button:hover{opacity:.92;transform:translateY(-1px);}
     .btn-secondary{background:var(--accent-red);}
     .btn-outline{background:transparent;color:var(--aviation-black);border:1px solid var(--aviation-black);}
+
+    /* Legend bar (like screenshot) */
+    .legend{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      background:#fff;
+      border:1px solid #e5e5e7;
+      border-radius:12px;
+      padding:10px 12px;
+      margin:10px 0 6px 0;
+    }
+    .legend-item{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color:#424245;
+      font-size:12px;
+      line-height:1.25;
+    }
+    .legend-dot{
+      width:12px;height:12px;border-radius:4px;display:inline-block;flex:0 0 auto;
+      border:1px solid rgba(0,0,0,0.14);
+      background:#f2f2f2;
+    }
+    .dot-green{ background:#e8f5e9; border-color: rgba(22,163,74,0.35); }
+    .dot-amber{ background:#fff8e1; border-color: rgba(239,108,0,0.35); }
+    .dot-magenta{ background: rgba(209,0,209,0.10); border-color: rgba(209,0,209,0.35); }
+
     table{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;}
     th{color:var(--text-secondary);text-transform:uppercase;font-size:10px;padding:10px;border-bottom:1px solid #d2d2d7;text-align:left;}
     td{padding:12px 10px;border-bottom:1px solid #f2f2f2;font-size:13px;vertical-align:middle;}
@@ -34,7 +65,6 @@
     .extra-net{color:var(--success-green);font-weight:700;}
     .adj-input{width:86px;padding:7px 8px;border:2px solid var(--accent-red);border-radius:10px;text-align:center;font-weight:700;}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
-
     .export-btn{background:#3a3a3c;font-size:11px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;border-radius:12px;}
     .notice{padding:12px;color:var(--text-secondary);background:#fff;border:1px solid #e5e5e7;border-radius:12px;margin-top:12px;line-height:1.35;}
 
@@ -80,6 +110,22 @@
     </div>
 
     <textarea id="rosterInput" placeholder="Paste the full WebCis roster text here (including the pattern section at the bottom)."></textarea>
+
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-dot dot-green"></span>
+        <span><strong>Green:</strong> Pattern is built to DPC60 or increased to DPC60.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot dot-amber"></span>
+        <span><strong>Amber:</strong> Credit hours are paid unless the margin is extended.</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot dot-magenta"></span>
+        <span><strong>Magenta:</strong> Minimum sign-off time needed for 0.6 duty to exceed credit.</span>
+      </div>
+    </div>
+
     <div class="hint">
       Reads pattern summary lines containing “Rpt #### Rls #### … Duty … Cred …”.<br>
       New S-Off format: HHMM (24h). Example: 2315.
@@ -151,7 +197,6 @@
   }
 
   function detectYear(text){
-    // Prefer "DATED 15Feb26" at bottom; else any ddMonYY/ddMonYYYY token
     const dated = text.match(/\bDATED\s+\d{1,2}[A-Za-z]{3}(\d{2,4})\b/i);
     const any = text.match(/\b\d{1,2}[A-Za-z]{3}(\d{2,4})\b/i);
     const m = dated || any;
@@ -172,10 +217,7 @@
     const ok = detectYear(text);
     document.getElementById('bidPeriod').value = ok ? state.yearFull : "";
 
-    // Date line: "15Feb"
     const dateLine = /^\s*(\d{1,2})([A-Za-z]{3})\b/;
-
-    // Summary line: "... Rpt 0505 Rls 1130 ... Duty 8:55 Cred 5:21"
     const rptLine = /^\s*Rpt\s+(\d{4})\s+Rls\s+(\d{4}).*?(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s*$/;
 
     let currentDay = null;
@@ -197,10 +239,10 @@
           day: parseInt(currentDay, 10),
           monKey: currentMonKey,
           dateLabel: `${currentDay} ${monthMap[currentMonKey].abbr} ${state.yearFull || ""}`.trim(),
-          origSOff: r[2],      // Rls
-          origDuty: duty,      // minutes
-          credit: cred,        // minutes
-          origD60: duty * 0.6  // minutes
+          origSOff: r[2],
+          origDuty: duty,
+          credit: cred,
+          origD60: duty * 0.6
         });
       }
     }
@@ -208,8 +250,7 @@
     renderTable(ok);
   }
 
-  function computeTriggerSignoffHHMM(row){
-    // Need: 0.6*duty_new > credit  => duty_new > credit/0.6
+  function computeTriggerSignoff(row){
     const minDutyToBeatCredit = Math.floor(row.credit / 0.6) + 1;
     const deltaNeeded = minDutyToBeatCredit - row.origDuty;
 
@@ -222,7 +263,7 @@
     return { already:false, hhmm: formatHHMM(origSoffMins + deltaNeeded), deltaNeeded };
   }
 
-  function renderTable(monthYearDetected){
+  function renderTable(yearDetected){
     if (!state.rosterData.length){
       document.getElementById('tableContainer').innerHTML =
         `<div class="notice">No pattern “Rpt/Rls/Duty/Cred” lines detected. Paste the bottom pattern section.</div>`;
@@ -230,7 +271,7 @@
     }
 
     let notice = "";
-    if (!monthYearDetected){
+    if (!yearDetected){
       notice = `<div class="notice">Year not detected from “DATED …”. Dates may show day+month only.</div>`;
     }
 
@@ -242,11 +283,11 @@
 
     state.rosterData.forEach((row, i) => {
       const margin = Math.abs(row.credit - row.origD60);
-      const trig = computeTriggerSignoffHHMM(row);
+      const trig = computeTriggerSignoff(row);
 
       const triggerHTML = trig.already
         ? `<span class="trigger-ok">Already</span>`
-        : `<span class="trigger-pill mono">${trig.hhmm}</span>`;
+        : `<span class="trigger-pill mono" id="trigger-${i}">${trig.hhmm}</span>`;
 
       html += `<tr>
         <td class="mono" style="white-space:nowrap">${row.dateLabel}</td>
@@ -321,34 +362,42 @@
     inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
-  // --- Calendar export with correct DATE ---
-  // For all-day events, Google expects dates=YYYYMMDD/YYYYMMDD (end date is exclusive). [web:141][web:112]
-  function yyyymmdd(year, monthNum, day){
-    return `${year}${pad2(monthNum)}${pad2(day)}`;
+  // Calendar export: all-day event on correct date, title includes margin + trigger time. [web:112][web:107]
+  function yyyymmdd(dateObj){
+    const y = dateObj.getFullYear();
+    const m = pad2(dateObj.getMonth() + 1);
+    const d = pad2(dateObj.getDate());
+    return `${y}${m}${d}`;
   }
 
   function exportDay(i){
     const row = state.rosterData[i];
-    const year = state.yearFull || String(new Date().getFullYear());
-    const monthNum = monthMap[row.monKey].num;
 
-    // margin between credit and current .6 duty (new if entered else original)
+    // Create a proper Date so month-end rollover is correct
+    const year = parseInt(state.yearFull || String(new Date().getFullYear()), 10);
+    const monthNum = monthMap[row.monKey].num; // 1-12
+    const startDate = new Date(year, monthNum - 1, row.day);
+    const endDate = new Date(year, monthNum - 1, row.day + 1);
+
+    // margin between credit and current .6 (new if entered else original)
     const newD60El = document.getElementById(`newD60-${i}`);
     const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
     const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
-
     const marginText = formatTime(Math.abs(row.credit - d60Mins));
 
-    const start = yyyymmdd(year, monthNum, row.day);
-    const end = yyyymmdd(year, monthNum, row.day + 1); // simple +1 day (OK within a month for typical use)
+    // trigger sign-off for this row
+    const trig = computeTriggerSignoff(row);
+    const triggerText = trig.already ? "Already" : trig.hhmm;
 
-    const title = `DPC60 Margin ${marginText}`;
+    const title = `DPC60 Margin ${marginText} | Trigger ${triggerText}`;
+    const dates = `${yyyymmdd(startDate)}/${yyyymmdd(endDate)}`;
+
     const url =
       `https://calendar.google.com/calendar/render?action=TEMPLATE` +
       `&text=${encodeURIComponent(title)}` +
-      `&dates=${start}/${end}`;
+      `&dates=${dates}`;
 
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   }
 
   function exportToCalendar(){ state.rosterData.forEach((_, i) => exportDay(i)); }
