@@ -23,38 +23,17 @@
       font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
       font-size:12px;box-sizing:border-box;margin-bottom:10px;white-space:pre;
     }
-
     .button-container{display:flex;justify-content:center;gap:12px;margin:16px 0;flex-wrap:wrap;}
     button{background:var(--aviation-black);color:white;border:none;padding:12px 22px;border-radius:12px;cursor:pointer;font-weight:600;transition:all .2s ease;}
     button:hover{opacity:.92;transform:translateY(-1px);}
     .btn-secondary{background:var(--accent-red);}
 
-    /* Legend bar */
     .legend{
-      display:flex;
-      gap:14px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-      background:#fff;
-      border:1px solid #e5e5e7;
-      border-radius:12px;
-      padding:10px 12px;
-      margin:10px 0 14px 0;
+      display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      background:#fff; border:1px solid #e5e5e7; border-radius:12px; padding:10px 12px; margin:10px 0 14px 0;
     }
-    .legend-item{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      color:#424245;
-      font-size:12px;
-      line-height:1.25;
-    }
-    .legend-dot{
-      width:12px;height:12px;border-radius:4px;display:inline-block;flex:0 0 auto;
-      border:1px solid rgba(0,0,0,0.14);
-      background:#f2f2f2;
-    }
+    .legend-item{display:flex; gap:10px; align-items:center; color:#424245; font-size:12px; line-height:1.25;}
+    .legend-dot{width:12px;height:12px;border-radius:4px;display:inline-block;flex:0 0 auto;border:1px solid rgba(0,0,0,0.14);background:#f2f2f2;}
     .dot-green{ background:#e8f5e9; border-color: rgba(22,163,74,0.35); }
     .dot-amber{ background:#fff8e1; border-color: rgba(239,108,0,0.35); }
     .dot-magenta{ background: rgba(209,0,209,0.10); border-color: rgba(209,0,209,0.35); }
@@ -71,7 +50,6 @@
     .export-btn{background:#3a3a3c;font-size:11px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;border-radius:12px;}
     .notice{padding:12px;color:var(--text-secondary);background:#fff;border:1px solid #e5e5e7;border-radius:12px;margin-top:12px;line-height:1.35;}
 
-    /* Trigger column styling (magenta) */
     .trigger-pill{
       background: rgba(209,0,209,0.10);
       color: var(--magenta);
@@ -140,7 +118,7 @@
   </div>
 
 <script>
-  let state = { rosterData: [], yearFull: "" };
+  let state = { rosterData: [], yearFull: "", bidPeriod: "" };
 
   const monthMap = {
     jan:{abbr:"Jan", num:1}, feb:{abbr:"Feb", num:2}, mar:{abbr:"Mar", num:3}, apr:{abbr:"Apr", num:4},
@@ -186,6 +164,13 @@
     return `${sign}$${(abs / 100).toFixed(2)}`;
   }
 
+  function detectBidPeriod(text){
+    const m = text.match(/\bBid\s*Period\s+(\d+)\b/i);
+    if (!m) return false;
+    state.bidPeriod = m[1];
+    return true;
+  }
+
   function detectYear(text){
     const dated = text.match(/\bDATED\s+\d{1,2}[A-Za-z]{3}(\d{2,4})\b/i);
     const any = text.match(/\b\d{1,2}[A-Za-z]{3}(\d{2,4})\b/i);
@@ -203,9 +188,16 @@
 
     state.rosterData = [];
     state.yearFull = "";
+    state.bidPeriod = "";
 
-    const ok = detectYear(text);
-    document.getElementById('bidPeriod').value = ok ? state.yearFull : "";
+    const bpOk = detectBidPeriod(text);
+    const yearOk = detectYear(text);
+
+    if (bpOk) {
+      document.getElementById('bidPeriod').value = `Bid Period ${state.bidPeriod}`;
+    } else {
+      document.getElementById('bidPeriod').value = "";
+    }
 
     const dateLine = /^\s*(\d{1,2})([A-Za-z]{3})\b/;
     const rptLine = /^\s*Rpt\s+(\d{4})\s+Rls\s+(\d{4}).*?(\d{1,2}:\d{2})\s+(\d{1,2}:\d{2})\s*$/;
@@ -237,7 +229,7 @@
       }
     }
 
-    renderTable(ok);
+    renderTable({ yearDetected: yearOk });
   }
 
   function computeTriggerSignoff(row){
@@ -252,7 +244,7 @@
     return { already:false, hhmm: formatHHMM(origSoffMins + deltaNeeded), deltaNeeded };
   }
 
-  function renderTable(yearDetected){
+  function renderTable({ yearDetected }){
     if (!state.rosterData.length){
       document.getElementById('tableContainer').innerHTML =
         `<div class="notice">No pattern “Rpt/Rls/Duty/Cred” lines detected. Paste the bottom pattern section.</div>`;
@@ -351,7 +343,6 @@
     inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
   }
 
-  // Calendar export: all-day event on correct date, title includes trigger time + original time. [web:106][web:123]
   function yyyymmdd(dateObj){
     const y = dateObj.getFullYear();
     const m = pad2(dateObj.getMonth() + 1);
@@ -363,11 +354,10 @@
     const row = state.rosterData[i];
 
     const year = parseInt(state.yearFull || String(new Date().getFullYear()), 10);
-    const monthNum = monthMap[row.monKey].num; // 1-12
+    const monthNum = monthMap[row.monKey].num;
     const startDate = new Date(year, monthNum - 1, row.day);
     const endDate = new Date(year, monthNum - 1, row.day + 1);
 
-    // margin between credit and current .6 (new if entered else original)
     const newD60El = document.getElementById(`newD60-${i}`);
     const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
     const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
