@@ -177,7 +177,7 @@
     return true;
   }
 
-  // Year detection: use header timestamps like "17Jan26 1255" from the ARMS/QANTAS lines. [web:123]
+  // Year detection: use header timestamps like "17Jan26 1255" from the ARMS/QANTAS lines.
   function detectYearFromHeader(text){
     const arms = text.match(/\bARMS\s+crew\b[\s\S]*?\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/i);
     const qf = text.match(/\bQANTAS\s+AIRWAYS\s+LIMITED\b[\s\S]*?\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/i);
@@ -201,7 +201,7 @@
     const bpOk = detectBidPeriod(text);
     const yearOk = detectYearFromHeader(text);
 
-    if (!yearOk) state.yearFull = "2026"; // safe default
+    if (!yearOk) state.yearFull = "2026";
 
     document.getElementById('bidPeriod').value = bpOk ? `Bid Period ${state.bidPeriod}` : "";
 
@@ -319,17 +319,17 @@
     const finalDuty = row.origDuty + delta;
     const finalD60 = finalDuty * 0.6;
 
-    // Avoid phantom "1 minute pay" when display shows equality
-    const EPS_MIN = 0.5;
+    // Conservative pay: compute paid minutes before/after, then round DOWN (floor). [web:406]
+    const paid0 = Math.max(row.credit, row.origD60);
+    const paid1 = Math.max(row.credit, finalD60);
 
-    const shouldPay = (finalD60 > row.credit + EPS_MIN) && (finalD60 > row.origD60 + EPS_MIN);
-    const payFromMins = Math.max(row.credit, row.origD60);
-    const diffMinsRaw = finalD60 - payFromMins;
-    const diffMins = (shouldPay && diffMinsRaw > EPS_MIN) ? diffMinsRaw : 0;
+    let diffMins = paid1 - paid0;
+    const EPS = 1e-6;
+    if (diffMins < EPS) diffMins = 0;
 
-    const payableMins = Math.max(0, Math.ceil(diffMins));
+    const payableMins = Math.max(0, Math.floor(diffMins));
+
     const rateCentsPerHour = Math.round(hourlyRate * 100);
-
     const grossCents = Math.round((payableMins * rateCentsPerHour) / 60);
     const netCents = Math.round(grossCents * taxMult);
 
@@ -373,7 +373,7 @@
     const trig = computeTriggerSignoff(row);
     const triggerText = trig.already ? "Already" : trig.hhmm;
 
-    // Flag calendar title when margin is effectively 0:00 (emoji + text for safety). [web:123]
+    // Flag calendar title when margin is effectively 0:00 (emoji + text for safety).
     const ZERO_EPS_MIN = 0.5;
     const flag = (marginMins <= ZERO_EPS_MIN) ? "🟠 [ZERO MARGIN] " : "";
 
@@ -390,8 +390,6 @@
 
   function exportToCalendar(){ state.rosterData.forEach((_, i) => exportDay(i)); }
 
-  // Reverted mail subject/body to the earlier simple version (bid period in subject, trigger in body).
-  // mailto query params should be encoded. [web:206][web:123]
   function exportToEmail(){
     const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
     const subject = `DPC60 Analysis - ${bpLabel}`;
