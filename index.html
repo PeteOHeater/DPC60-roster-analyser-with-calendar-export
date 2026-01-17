@@ -177,8 +177,8 @@
     return true;
   }
 
-  // Year detection: use the header timestamps like "17Jan26 1255" (ARMS/QANTAS lines).
-  // Prefer "ARMS crew ..." then fallback to "QANTAS AIRWAYS LIMITED ..." then any "ddMonYY hhmm". [web:178]
+  // Year detection: use header timestamps like "17Jan26 1255" from the ARMS/QANTAS lines.
+  // Uses regex capture groups to extract "26" => "2026". [web:206]
   function detectYearFromHeader(text){
     const arms = text.match(/\bARMS\s+crew\b[\s\S]*?\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/i);
     const qf = text.match(/\bQANTAS\s+AIRWAYS\s+LIMITED\b[\s\S]*?\b(\d{1,2})([A-Za-z]{3})(\d{2})\s+\d{4}\b/i);
@@ -187,8 +187,7 @@
     const m = arms || qf || any;
     if (!m) return false;
 
-    const yy = m[3];           // "26"
-    state.yearFull = `20${yy}`; // "2026"
+    state.yearFull = `20${m[3]}`;
     return true;
   }
 
@@ -203,7 +202,7 @@
     const bpOk = detectBidPeriod(text);
     const yearOk = detectYearFromHeader(text);
 
-    // hard default to 2026 if not found (so UI never shows 2025 by accident)
+    // Hard default: if year isn't found, set to 2026 so UI/calendar never slip to 2025.
     if (!yearOk) state.yearFull = "2026";
 
     document.getElementById('bidPeriod').value = bpOk ? `Bid Period ${state.bidPeriod}` : "";
@@ -389,7 +388,13 @@
 
   function exportToEmail(){
     const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
-    const subject = `DPC60 Analysis - ${bpLabel}`;
+    const ZERO_EPS_MIN = 0.5;
+
+    const hasZeroMargin = state.rosterData.some(r => Math.abs(r.credit - r.origD60) <= ZERO_EPS_MIN);
+
+    // Combine emoji + text label for safety (emoji may not render everywhere). [web:206][web:123]
+    const flag = hasZeroMargin ? "🟠 [ZERO MARGIN] " : "";
+    const subject = `${flag}DPC60 Analysis - ${bpLabel}`;
 
     let body = `DPC60 ANALYSIS - ${bpLabel}\n\n`;
 
@@ -397,10 +402,13 @@
       const trig = computeTriggerSignoff(r);
       const triggerText = trig.already ? "Already" : trig.hhmm;
 
-      body += `${r.dateLabel}\n`;
+      const marginMins = Math.abs(r.credit - r.origD60);
+      const marginTag = (marginMins <= ZERO_EPS_MIN) ? " **ZERO MARGIN**" : "";
+
+      body += `${r.dateLabel}${marginTag}\n`;
       body += `  Orig S-Off: ${r.origSOff}\n`;
       body += `  Sign Off Trigger: ${triggerText}\n`;
-      body += `  Margin (Credit vs .6): ${formatTime(Math.abs(r.credit - r.origD60))}\n\n`;
+      body += `  Margin (Credit vs .6): ${formatTime(marginMins)}\n\n`;
     });
 
     window.location.href =
