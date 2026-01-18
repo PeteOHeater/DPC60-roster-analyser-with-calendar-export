@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DPC60 Roster Analyser</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root{
       --apple-bg:#f5f5f7; --aviation-black:#1d1d1f; --accent-red:#e21b22;
@@ -14,7 +12,7 @@
       --magenta:#d100d1; --credit-blue:#1565c0;
     }
     body{font-family:'Inter',sans-serif;padding:40px 20px;background:var(--apple-bg);color:var(--aviation-black);-webkit-font-smoothing:antialiased;}
-    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1700px;margin:auto;border:1px solid var(--glass-border);}
+    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1800px;margin:auto;border:1px solid var(--glass-border);}
     h2{font-weight:700;text-align:center;margin:0 0 22px 0;font-size:28px;}
     .controls{display:flex;gap:16px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
     .input-group{display:flex;flex-direction:column;gap:8px;min-width:200px;}
@@ -48,8 +46,8 @@
     td{padding:12px 10px;border-bottom:1px solid #f2f2f2;font-size:13px;vertical-align:middle;}
     
     /* Financial columns border */
-    th:nth-child(11), th:nth-child(12),
-    td:nth-child(11), td:nth-child(12) {
+    th:nth-child(12), th:nth-child(13),
+    td:nth-child(12), td:nth-child(13) {
       border-left: 3px solid var(--accent-red);
       background-color: rgba(226, 27, 34, 0.03);
     }
@@ -86,6 +84,40 @@
       padding: 3px 8px;
       display: inline-block;
       font-weight: 800;
+    }
+
+    /* Rest period styling with threshold colors */
+    .rest-critical{
+      background: rgba(226, 27, 34, 0.12);
+      color: #c62828;
+      border: 2px solid var(--accent-red);
+      border-radius: 8px;
+      padding: 4px 10px;
+      display: inline-block;
+      font-weight: 800;
+    }
+    .rest-warning{
+      background: rgba(239, 108, 0, 0.12);
+      color: #ef6c00;
+      border: 2px solid rgba(239, 108, 0, 0.5);
+      border-radius: 8px;
+      padding: 4px 10px;
+      display: inline-block;
+      font-weight: 700;
+    }
+    .rest-ok{
+      background: rgba(22,163,74,0.10);
+      color: #167a3b;
+      border: 1px solid rgba(22,163,74,0.35);
+      border-radius: 8px;
+      padding: 4px 10px;
+      display: inline-block;
+      font-weight: 600;
+    }
+    .rest-info{
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-style: italic;
     }
 
     /* Export modal (native <dialog>) */
@@ -182,6 +214,10 @@
     </div>
   </dialog>
 
+<!-- Load jsPDF libraries BEFORE your script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
 <script>
   let state = { rosterData: [], yearFull: "", bidPeriod: "" };
 
@@ -222,6 +258,42 @@
     if (Math.abs(credit - d60) <= 0.5) return 'margin-green';
     return credit > d60 ? 'margin-amber' : 'margin-blue';
   };
+
+  function calculateRestPeriod(currentRow, nextRow, newSignOffTime) {
+    if (!nextRow || !nextRow.rptTime) return null;
+    
+    const MIN_REST_HOURS = 10;
+    const MIN_REST_MINS = MIN_REST_HOURS * 60;
+    const WARNING_THRESHOLD_MINS = 11 * 60;
+    
+    const signOffToUse = newSignOffTime || currentRow.origSOff;
+    const signOffMins = parseHHMM(signOffToUse);
+    if (signOffMins === null) return null;
+    
+    const nextSignOnMins = parseHHMM(nextRow.rptTime);
+    if (nextSignOnMins === null) return null;
+    
+    let restMins = nextSignOnMins - signOffMins;
+    if (restMins < 0) restMins += 1440;
+    
+    const restHours = (restMins / 60).toFixed(1);
+    const isCritical = restMins < MIN_REST_MINS;
+    const isWarning = restMins >= MIN_REST_MINS && restMins < WARNING_THRESHOLD_MINS;
+    const isOk = restMins >= WARNING_THRESHOLD_MINS;
+    const shortfall = isCritical ? MIN_REST_MINS - restMins : 0;
+    const shortfallHours = (shortfall / 60).toFixed(1);
+    
+    return {
+      restMins,
+      restHours,
+      isCritical,
+      isWarning,
+      isOk,
+      shortfall,
+      shortfallHours,
+      minRequired: MIN_REST_HOURS
+    };
+  }
 
   function detectBidPeriod(text){
     const m = text.match(/\bBid\s*Period\s+(\d+)\b/i);
@@ -278,6 +350,7 @@
           day: parseInt(currentDay, 10),
           monKey: currentMonKey,
           dateLabel: `${currentDay} ${monthMap[currentMonKey].abbr} ${state.yearFull}`.trim(),
+          rptTime: r[1],
           origSOff: r[2],
           origDuty: duty,
           credit: cred,
@@ -317,16 +390,33 @@
     let html = `<table><thead><tr>
       <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin Between<br>Credit Hrs and DPC60</th>
       <th>S-OFF Trigger for DPC60</th>
-      <th>New S-OFF Time?</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
+      <th>New S-OFF Time?</th><th>New Duty</th><th>New .6</th><th>Rest Period<br>(to next duty)</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
     </tr></thead><tbody>`;
 
     state.rosterData.forEach((row, i) => {
       const margin = Math.abs(row.credit - row.origD60);
       const trig = computeTriggerSignoff(row);
-
+      const nextRow = state.rosterData[i + 1];
+      
       const triggerHTML = trig.already
         ? `<span class="trigger-ok">Already</span>`
         : `<span class="trigger-pill mono" id="trigger-${i}">${trig.hhmm}</span>`;
+
+      let restHTML = '<span class="rest-info">Last duty</span>';
+      if (nextRow) {
+        const rest = calculateRestPeriod(row, nextRow, null);
+        if (rest) {
+          if (rest.isCritical) {
+            restHTML = `<span class="rest-critical mono">⚠️ ${rest.restHours}hrs (${rest.shortfallHours}hr short)</span>`;
+          } else if (rest.isWarning) {
+            restHTML = `<span class="rest-warning mono">⚠️ ${rest.restHours}hrs</span>`;
+          } else {
+            restHTML = `<span class="rest-ok mono">${rest.restHours}hrs ✓</span>`;
+          }
+        } else {
+          restHTML = '<span class="rest-info">Enter new S-OFF</span>';
+        }
+      }
 
       html += `<tr>
         <td class="mono" style="white-space:nowrap">${row.dateLabel}</td>
@@ -340,6 +430,7 @@
         <td><input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
         <td id="newDuty-${i}" class="mono">-</td>
         <td id="newD60-${i}" class="mono">-</td>
+        <td id="restPeriod-${i}">${restHTML}</td>
         <td id="gross-${i}" class="mono">$0.00</td>
         <td id="net-${i}" class="mono extra-net">$0.00</td>
         <td><button class="export-btn" onclick="openExportDialog(${i})">🗓️ Export</button></td>
@@ -357,6 +448,7 @@
     if (newVal.length !== 4) return;
 
     const row = state.rosterData[index];
+    const nextRow = state.rosterData[index + 1];
 
     const rateIn = parseFloat(document.getElementById('hourlyRate').value);
     const hourlyRate = Number.isFinite(rateIn) ? rateIn : 353;
@@ -398,6 +490,20 @@
     const mCell = document.getElementById(`marginCell-${index}`);
     const spanClass = `mono ${getMarginClass(row.credit, finalD60Mins)}`;
     mCell.innerHTML = `<span class="${spanClass}">${formatTime(Math.abs(row.credit - finalD60Mins))}</span>`;
+    
+    const restCell = document.getElementById(`restPeriod-${index}`);
+    if (restCell && nextRow) {
+      const rest = calculateRestPeriod(row, nextRow, newVal);
+      if (rest) {
+        if (rest.isCritical) {
+          restCell.innerHTML = `<span class="rest-critical mono">⚠️ ${rest.restHours}hrs (${rest.shortfallHours}hr short)</span>`;
+        } else if (rest.isWarning) {
+          restCell.innerHTML = `<span class="rest-warning mono">⚠️ ${rest.restHours}hrs</span>`;
+        } else {
+          restCell.innerHTML = `<span class="rest-ok mono">${rest.restHours}hrs ✓</span>`;
+        }
+      }
+    }
   }
 
   function updateAllCalculations(){
@@ -412,7 +518,6 @@
     return `${y}${m}${d}`;
   }
 
-  // Google Calendar export
   function exportDay(i){
     const row = state.rosterData[i];
 
@@ -445,7 +550,6 @@
     window.open(url, "_blank");
   }
 
-  // Modal export chooser (single row)
   let exportIndex = null;
 
   function openExportDialog(i){
@@ -473,14 +577,12 @@
     if (which === "ics") exportDayICS(i);
   }
 
-  // Export All dialog handlers
   function openExportAllDialog(){
     const dlg = document.getElementById("exportAllDialog");
     if (dlg && typeof dlg.showModal === "function") {
       dlg.showModal();
       return;
     }
-    // Fallback: export all to Google
     state.rosterData.forEach((_, i) => exportDay(i));
   }
 
@@ -642,11 +744,13 @@ END:VEVENT
       const newDutyEl = document.getElementById(`newDuty-${i}`);
       const grossEl = document.getElementById(`gross-${i}`);
       const netEl = document.getElementById(`net-${i}`);
+      const restEl = document.getElementById(`restPeriod-${i}`);
 
       const newDutyText = newDutyEl ? newDutyEl.innerText : "-";
       const newD60Text = newD60El ? newD60El.innerText : "-";
       const grossText = grossEl ? grossEl.innerText : "$0.00";
       const netText = netEl ? netEl.innerText : "$0.00";
+      const restText = restEl ? restEl.innerText.replace(/[⚠️✓]/g, '').trim() : "-";
 
       tableData.push([
         row.dateLabel,
@@ -658,6 +762,7 @@ END:VEVENT
         triggerText,
         newDutyText,
         newD60Text,
+        restText,
         grossText,
         netText
       ]);
@@ -665,13 +770,13 @@ END:VEVENT
 
     doc.autoTable({
       startY: 28,
-      head: [['Date', 'Orig S-Off', 'Duty', 'Credit', '.6 Duty', 'Margin', 'S-OFF Trigger', 'New Duty', 'New .6', 'Extra Gross', 'Net After Tax']],
+      head: [['Date', 'Orig S-Off', 'Duty', 'Credit', '.6 Duty', 'Margin', 'S-OFF Trigger', 'New Duty', 'New .6', 'Rest Period', 'Extra Gross', 'Net After Tax']],
       body: tableData,
-      styles: { fontSize: 8, cellPadding: 2 },
+      styles: { fontSize: 7, cellPadding: 1.5 },
       headStyles: { fillColor: [29, 29, 31], textColor: 255 },
       columnStyles: {
-        9: { textColor: [226, 27, 34], fontStyle: 'bold' },
-        10: { textColor: [22, 163, 74], fontStyle: 'bold' }
+        10: { textColor: [226, 27, 34], fontStyle: 'bold' },
+        11: { textColor: [22, 163, 74], fontStyle: 'bold' }
       }
     });
 
