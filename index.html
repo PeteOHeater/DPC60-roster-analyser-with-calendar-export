@@ -5,17 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DPC60 Roster Analyser</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root{
       --apple-bg:#f5f5f7; --aviation-black:#1d1d1f; --accent-red:#e21b22;
       --glass-border:rgba(0,0,0,0.08); --text-secondary:#86868b; --success-green:#16a34a;
-      --magenta:#d100d1;
+      --magenta:#d100d1; --credit-blue:#1565c0;
     }
     body{font-family:'Inter',sans-serif;padding:40px 20px;background:var(--apple-bg);color:var(--aviation-black);-webkit-font-smoothing:antialiased;}
     .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1700px;margin:auto;border:1px solid var(--glass-border);}
     h2{font-weight:700;text-align:center;margin:0 0 22px 0;font-size:28px;}
     .controls{display:flex;gap:16px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
-    .input-group{display:flex;flex-direction:column;gap:8px;min-width:180px;}
+    .input-group{display:flex;flex-direction:column;gap:8px;min-width:200px;}
     label{font-size:11px;text-transform:uppercase;font-weight:600;color:var(--text-secondary);}
     input[type="number"],input[type="text"]{padding:10px 14px;border:1px solid #d2d2d7;border-radius:10px;font-size:14px;background:white;}
     textarea{
@@ -28,6 +30,7 @@
     button{background:var(--aviation-black);color:white;border:none;padding:12px 22px;border-radius:12px;cursor:pointer;font-weight:600;transition:all .2s ease;}
     button:hover{opacity:.92;transform:translateY(-1px);}
     .btn-secondary{background:var(--accent-red);}
+    .btn-pdf{background:#3a3a3c;}
 
     .legend{
       display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;
@@ -43,6 +46,20 @@
     table{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;}
     th{color:var(--text-secondary);text-transform:uppercase;font-size:10px;padding:10px;border-bottom:1px solid #d2d2d7;text-align:left;}
     td{padding:12px 10px;border-bottom:1px solid #f2f2f2;font-size:13px;vertical-align:middle;}
+    
+    /* Financial columns border */
+    th:nth-child(11), th:nth-child(12),
+    td:nth-child(11), td:nth-child(12) {
+      border-left: 3px solid var(--accent-red);
+      background-color: rgba(226, 27, 34, 0.03);
+    }
+    
+    /* Credit column color */
+    td:nth-child(4) {
+      color: var(--credit-blue);
+      font-weight: 600;
+    }
+    
     .margin-green{background-color:#e8f5e9;color:#2e7d32;border-radius:6px;font-weight:600;padding:3px 8px;display:inline-block;}
     .margin-blue{background-color:#e3f2fd;color:#1565c0;border-radius:6px;padding:3px 8px;display:inline-block;}
     .margin-amber{background-color:#fff8e1;color:#ef6c00;border-radius:6px;padding:3px 8px;display:inline-block;}
@@ -98,11 +115,11 @@
 
     <div class="controls">
       <div class="input-group">
-        <label>Hourly Rate ($)</label>
+        <label>Enter Your Hourly Rate ($)</label>
         <input type="number" id="hourlyRate" value="353" oninput="updateAllCalculations()">
       </div>
       <div class="input-group">
-        <label>Tax Rate %</label>
+        <label>Enter Desired Tax Rate %</label>
         <input type="number" id="taxRate" value="47" oninput="updateAllCalculations()">
       </div>
       <div class="input-group">
@@ -117,32 +134,33 @@
     <div class="legend">
       <div class="legend-item">
         <span class="legend-dot dot-green"></span>
-        <span><strong>Green:</strong> Pattern is built to DPC60 or increased to DPC60.</span>
+        <span><strong>Green:</strong> Future Pattern is built to DPC60 or it's in the past and has been increased to DPC60.</span>
       </div>
       <div class="legend-item">
         <span class="legend-dot dot-amber"></span>
-        <span><strong>Amber:</strong> Credit hours are paid unless the margin is extended.</span>
+        <span><strong>Amber:</strong> Credit Hours are greater than DPC60.</span>
       </div>
       <div class="legend-item">
         <span class="legend-dot dot-blue"></span>
-        <span><strong>Blue:</strong> 0.6 duty is greater than credit (0.6 duty is the paid value).</span>
+        <span><strong>Blue:</strong> .6 Duty is greater than Credit Hours.</span>
       </div>
       <div class="legend-item">
         <span class="legend-dot dot-magenta"></span>
-        <span><strong>Magenta:</strong> Minimum sign-off time needed for 0.6 duty to exceed credit.</span>
+        <span><strong>Magenta:</strong> S-OFF trigger for DPC60.</span>
       </div>
     </div>
 
     <div class="button-container">
       <button onclick="processRoster()">Process Roster</button>
-      <button class="btn-secondary" onclick="exportToCalendar()">Export All to Calendar</button>
+      <button class="btn-secondary" onclick="openExportAllDialog()">Export All to Calendar</button>
+      <button class="btn-pdf" onclick="createPDF()">📄 Create PDF</button>
       <button class="btn-secondary" onclick="exportToEmail()">📧 Email Results</button>
     </div>
 
     <div id="tableContainer"></div>
   </div>
 
-  <!-- Export chooser modal -->
+  <!-- Single row export modal -->
   <dialog id="exportDialog" class="export-dialog">
     <h3>Export event</h3>
     <p>Choose where to export this event.</p>
@@ -150,6 +168,17 @@
       <button class="cancel" type="button" onclick="closeExportDialog()">Cancel</button>
       <button type="button" onclick="exportChoice('ics')">Apple Calendar (ICS)</button>
       <button type="button" onclick="exportChoice('google')">Google Calendar</button>
+    </div>
+  </dialog>
+
+  <!-- Export all modal -->
+  <dialog id="exportAllDialog" class="export-dialog">
+    <h3>Export all events</h3>
+    <p>Choose where to export all roster events.</p>
+    <div class="export-actions">
+      <button class="cancel" type="button" onclick="closeExportAllDialog()">Cancel</button>
+      <button type="button" onclick="exportAllChoice('ics')">Apple Calendar (ICS)</button>
+      <button type="button" onclick="exportAllChoice('google')">Google Calendar</button>
     </div>
   </dialog>
 
@@ -275,21 +304,20 @@
   function dollars(n){
     const v = Number.isFinite(n) ? n : 0;
     const sign = v < 0 ? "-" : "";
-    // toFixed renders fixed decimals for currency-like output. [web:421]
     return `${sign}$${Math.abs(v).toFixed(2)}`;
   }
 
   function renderTable(){
     if (!state.rosterData.length){
       document.getElementById('tableContainer').innerHTML =
-        `<div class="notice">No pattern “Rpt/Rls/Duty/Cred” lines detected. Paste the bottom pattern section.</div>`;
+        `<div class="notice">No pattern "Rpt/Rls/Duty/Cred" lines detected. Paste the bottom pattern section.</div>`;
       return;
     }
 
     let html = `<table><thead><tr>
-      <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin</th>
-      <th>S-Off to Trigger</th>
-      <th>New S-Off</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
+      <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin Between<br>Credit Hrs and DPC60</th>
+      <th>S-OFF Trigger for DPC60</th>
+      <th>New S-OFF Time?</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
     </tr></thead><tbody>`;
 
     state.rosterData.forEach((row, i) => {
@@ -322,7 +350,6 @@
     document.getElementById('tableContainer').innerHTML = html;
   }
 
-  // Second-perfect money: compute paid basis in seconds, then gross/net from seconds.
   function calculateAdjustment(index, newValRaw){
     const inputs = document.querySelectorAll('.adj-input');
     const newVal = (newValRaw || "").replace(/\D/g,"").slice(0,4);
@@ -385,7 +412,7 @@
     return `${y}${m}${d}`;
   }
 
-  // Google Calendar export (existing behaviour)
+  // Google Calendar export
   function exportDay(i){
     const row = state.rosterData[i];
 
@@ -407,10 +434,9 @@
     const ZERO_EPS_MIN = 0.5;
     const flag = (marginMins <= ZERO_EPS_MIN) ? "🟠 [ZERO MARGIN] " : "";
 
-    const title = `${flag}DPC60 Margin ${marginText} | Sign Off Trigger for DPC60 ${triggerText} (Orig ${row.origSOff})`;
+    const title = `${flag}DPC60 Margin ${marginText} | S-OFF Trigger for DPC60 ${triggerText} (Orig ${row.origSOff})`;
     const dates = `${yyyymmdd(startDate)}/${yyyymmdd(endDate)}`;
 
-    // action=TEMPLATE, text, dates is standard for Google Calendar event links. [web:109]
     const url =
       `https://calendar.google.com/calendar/render?action=TEMPLATE` +
       `&text=${encodeURIComponent(title)}` +
@@ -419,22 +445,16 @@
     window.open(url, "_blank");
   }
 
-  function exportToCalendar(){ state.rosterData.forEach((_, i) => exportDay(i)); }
-
-  // Modal export chooser (<dialog>)
+  // Modal export chooser (single row)
   let exportIndex = null;
 
   function openExportDialog(i){
     exportIndex = i;
     const dlg = document.getElementById("exportDialog");
-
-    // showModal() displays the dialog as a modal. [web:464]
     if (dlg && typeof dlg.showModal === "function") {
       dlg.showModal();
       return;
     }
-
-    // Fallback if <dialog> unsupported: default to Google Calendar
     exportDay(i);
   }
 
@@ -453,13 +473,38 @@
     if (which === "ics") exportDayICS(i);
   }
 
+  // Export All dialog handlers
+  function openExportAllDialog(){
+    const dlg = document.getElementById("exportAllDialog");
+    if (dlg && typeof dlg.showModal === "function") {
+      dlg.showModal();
+      return;
+    }
+    // Fallback: export all to Google
+    state.rosterData.forEach((_, i) => exportDay(i));
+  }
+
+  function closeExportAllDialog(){
+    const dlg = document.getElementById("exportAllDialog");
+    if (dlg && dlg.open) dlg.close();
+  }
+
+  function exportAllChoice(which){
+    closeExportAllDialog();
+    
+    if (which === "google") {
+      state.rosterData.forEach((_, i) => exportDay(i));
+    } else if (which === "ics") {
+      exportAllToICS();
+    }
+  }
+
   function exportDayICS(i){
     const row = state.rosterData[i];
 
     const year = parseInt(state.yearFull || "2026", 10);
     const monthNum = monthMap[row.monKey].num;
 
-    // All-day event (same behaviour as Google export)
     const start = new Date(Date.UTC(year, monthNum - 1, row.day, 0, 0, 0));
     const end   = new Date(Date.UTC(year, monthNum - 1, row.day + 1, 0, 0, 0));
 
@@ -507,6 +552,132 @@ END:VCALENDAR
     window.open(href, "_blank");
   }
 
+  function exportAllToICS(){
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const ymd = (d) => `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}`;
+
+    const dtStamp = (() => {
+      const now = new Date();
+      return `${now.getUTCFullYear()}${pad2(now.getUTCMonth()+1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}${pad2(now.getUTCSeconds())}Z`;
+    })();
+
+    let ics = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DPC60 Analyser//EN
+CALSCALE:GREGORIAN
+`;
+
+    state.rosterData.forEach((row, i) => {
+      const year = parseInt(state.yearFull || "2026", 10);
+      const monthNum = monthMap[row.monKey].num;
+
+      const start = new Date(Date.UTC(year, monthNum - 1, row.day, 0, 0, 0));
+      const end   = new Date(Date.UTC(year, monthNum - 1, row.day + 1, 0, 0, 0));
+
+      const newD60El = document.getElementById(`newD60-${i}`);
+      const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
+      const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
+
+      const marginMins = Math.abs(row.credit - d60Mins);
+      const marginText = formatTime(marginMins);
+
+      const trig = computeTriggerSignoff(row);
+      const triggerText = trig.already ? "Already" : trig.hhmm;
+
+      const ZERO_EPS_MIN = 0.5;
+      const flag = (marginMins <= ZERO_EPS_MIN) ? "🟠 [ZERO MARGIN] " : "";
+
+      const title = `${flag}DPC60 Margin ${marginText} | Trigger ${triggerText} (Orig ${row.origSOff})`;
+      const uid = `dpc60-${year}-${monthNum}-${row.day}-${row.origSOff}@local`;
+
+      ics += `BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${dtStamp}
+SUMMARY:${title.replace(/\n/g, " ")}
+DTSTART;VALUE=DATE:${ymd(start)}
+DTEND;VALUE=DATE:${ymd(end)}
+END:VEVENT
+`;
+    });
+
+    ics += `END:VCALENDAR
+`;
+
+    const href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = `DPC60-Roster-${state.bidPeriod || 'Export'}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function createPDF(){
+    if (!state.rosterData.length){
+      alert('Please process roster data first.');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+
+    const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
+    const hourlyRate = document.getElementById('hourlyRate').value;
+    const taxRate = document.getElementById('taxRate').value;
+
+    doc.setFontSize(18);
+    doc.text('DPC60 Roster Analysis', 14, 15);
+    
+    doc.setFontSize(11);
+    doc.text(`${bpLabel} | Hourly Rate: $${hourlyRate} | Tax Rate: ${taxRate}%`, 14, 22);
+
+    const tableData = [];
+    
+    state.rosterData.forEach((row, i) => {
+      const margin = Math.abs(row.credit - row.origD60);
+      const trig = computeTriggerSignoff(row);
+      const triggerText = trig.already ? "Already" : trig.hhmm;
+
+      const newD60El = document.getElementById(`newD60-${i}`);
+      const newDutyEl = document.getElementById(`newDuty-${i}`);
+      const grossEl = document.getElementById(`gross-${i}`);
+      const netEl = document.getElementById(`net-${i}`);
+
+      const newDutyText = newDutyEl ? newDutyEl.innerText : "-";
+      const newD60Text = newD60El ? newD60El.innerText : "-";
+      const grossText = grossEl ? grossEl.innerText : "$0.00";
+      const netText = netEl ? netEl.innerText : "$0.00";
+
+      tableData.push([
+        row.dateLabel,
+        row.origSOff,
+        formatTime(row.origDuty),
+        formatTime(row.credit),
+        formatTime(row.origD60),
+        formatTime(margin),
+        triggerText,
+        newDutyText,
+        newD60Text,
+        grossText,
+        netText
+      ]);
+    });
+
+    doc.autoTable({
+      startY: 28,
+      head: [['Date', 'Orig S-Off', 'Duty', 'Credit', '.6 Duty', 'Margin', 'S-OFF Trigger', 'New Duty', 'New .6', 'Extra Gross', 'Net After Tax']],
+      body: tableData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [29, 29, 31], textColor: 255 },
+      columnStyles: {
+        9: { textColor: [226, 27, 34], fontStyle: 'bold' },
+        10: { textColor: [22, 163, 74], fontStyle: 'bold' }
+      }
+    });
+
+    doc.save(`DPC60-Analysis-${bpLabel.replace(/\s+/g, '-')}.pdf`);
+  }
+
   function exportToEmail(){
     const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
     const subject = `DPC60 Analysis - ${bpLabel}`;
@@ -519,7 +690,7 @@ END:VCALENDAR
 
       body += `${r.dateLabel}\n`;
       body += `  Orig S-Off: ${r.origSOff}\n`;
-      body += `  Sign Off Trigger: ${triggerText}\n`;
+      body += `  S-OFF Trigger for DPC60: ${triggerText}\n`;
       body += `  Margin (Credit vs .6): ${formatTime(Math.abs(r.credit - r.origD60))}\n\n`;
     });
 
