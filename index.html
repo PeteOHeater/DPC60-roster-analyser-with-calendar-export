@@ -14,7 +14,7 @@
       --magenta:#d100d1; --credit-blue:#1565c0;
     }
     body{font-family:'Inter',sans-serif;padding:40px 20px;background:var(--apple-bg);color:var(--aviation-black);-webkit-font-smoothing:antialiased;}
-    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1700px;margin:auto;border:1px solid var(--glass-border);}
+    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);padding:36px;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.04);max-width:1800px;margin:auto;border:1px solid var(--glass-border);}
     h2{font-weight:700;text-align:center;margin:0 0 22px 0;font-size:28px;}
     .controls{display:flex;gap:16px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;}
     .input-group{display:flex;flex-direction:column;gap:8px;min-width:200px;}
@@ -48,8 +48,8 @@
     td{padding:12px 10px;border-bottom:1px solid #f2f2f2;font-size:13px;vertical-align:middle;}
     
     /* Financial columns border */
-    th:nth-child(11), th:nth-child(12),
-    td:nth-child(11), td:nth-child(12) {
+    th:nth-child(12), th:nth-child(13),
+    td:nth-child(12), td:nth-child(13) {
       border-left: 3px solid var(--accent-red);
       background-color: rgba(226, 27, 34, 0.03);
     }
@@ -86,6 +86,40 @@
       padding: 3px 8px;
       display: inline-block;
       font-weight: 800;
+    }
+
+    /* Rest period styling with threshold colors */
+    .rest-critical{
+      background: rgba(226, 27, 34, 0.12);
+      color: #c62828;
+      border: 2px solid var(--accent-red);
+      border-radius: 8px;
+      padding: 4px 10px;
+      display: inline-block;
+      font-weight: 800;
+    }
+    .rest-warning{
+      background: rgba(239, 108, 0, 0.12);
+      color: #ef6c00;
+      border: 2px solid rgba(239, 108, 0, 0.5);
+      border-radius: 8px;
+      padding: 4px 10px;
+      display: inline-block;
+      font-weight: 700;
+    }
+    .rest-ok{
+      background: rgba(22,163,74,0.10);
+      color: #167a3b;
+      border: 1px solid rgba(22,163,74,0.35);
+      border-radius: 8px;
+      padding: 4px 10px;
+      display: inline-block;
+      font-weight: 600;
+    }
+    .rest-info{
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-style: italic;
     }
 
     /* Export modal (native <dialog>) */
@@ -223,6 +257,42 @@
     return credit > d60 ? 'margin-amber' : 'margin-blue';
   };
 
+  function calculateRestPeriod(currentRow, nextRow, newSignOffTime) {
+    if (!nextRow || !nextRow.rptTime) return null;
+    
+    const MIN_REST_HOURS = 10;
+    const MIN_REST_MINS = MIN_REST_HOURS * 60;
+    const WARNING_THRESHOLD_MINS = 11 * 60; // 11 hours - within 1 hour of minimum
+    
+    const signOffToUse = newSignOffTime || currentRow.origSOff;
+    const signOffMins = parseHHMM(signOffToUse);
+    if (signOffMins === null) return null;
+    
+    const nextSignOnMins = parseHHMM(nextRow.rptTime);
+    if (nextSignOnMins === null) return null;
+    
+    let restMins = nextSignOnMins - signOffMins;
+    if (restMins < 0) restMins += 1440;
+    
+    const restHours = (restMins / 60).toFixed(1);
+    const isCritical = restMins < MIN_REST_MINS;
+    const isWarning = restMins >= MIN_REST_MINS && restMins < WARNING_THRESHOLD_MINS;
+    const isOk = restMins >= WARNING_THRESHOLD_MINS;
+    const shortfall = isCritical ? MIN_REST_MINS - restMins : 0;
+    const shortfallHours = (shortfall / 60).toFixed(1);
+    
+    return {
+      restMins,
+      restHours,
+      isCritical,
+      isWarning,
+      isOk,
+      shortfall,
+      shortfallHours,
+      minRequired: MIN_REST_HOURS
+    };
+  }
+
   function detectBidPeriod(text){
     const m = text.match(/\bBid\s*Period\s+(\d+)\b/i);
     if (!m) return false;
@@ -278,6 +348,7 @@
           day: parseInt(currentDay, 10),
           monKey: currentMonKey,
           dateLabel: `${currentDay} ${monthMap[currentMonKey].abbr} ${state.yearFull}`.trim(),
+          rptTime: r[1],
           origSOff: r[2],
           origDuty: duty,
           credit: cred,
@@ -317,16 +388,34 @@
     let html = `<table><thead><tr>
       <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin Between<br>Credit Hrs and DPC60</th>
       <th>S-OFF Trigger for DPC60</th>
-      <th>New S-OFF Time?</th><th>New Duty</th><th>New .6</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
+      <th>New S-OFF Time?</th><th>New Duty</th><th>New .6</th><th>Rest Period<br>(to next duty)</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
     </tr></thead><tbody>`;
 
     state.rosterData.forEach((row, i) => {
       const margin = Math.abs(row.credit - row.origD60);
       const trig = computeTriggerSignoff(row);
-
+      const nextRow = state.rosterData[i + 1];
+      
       const triggerHTML = trig.already
         ? `<span class="trigger-ok">Already</span>`
         : `<span class="trigger-pill mono" id="trigger-${i}">${trig.hhmm}</span>`;
+
+      // Calculate initial rest period with original sign-off
+      let restHTML = '<span class="rest-info">Last duty</span>';
+      if (nextRow) {
+        const rest = calculateRestPeriod(row, nextRow, null);
+        if (rest) {
+          if (rest.isCritical) {
+            restHTML = `<span class="rest-critical mono">⚠️ ${rest.restHours}hrs (${rest.shortfallHours}hr short)</span>`;
+          } else if (rest.isWarning) {
+            restHTML = `<span class="rest-warning mono">⚠️ ${rest.restHours}hrs</span>`;
+          } else {
+            restHTML = `<span class="rest-ok mono">${rest.restHours}hrs ✓</span>`;
+          }
+        } else {
+          restHTML = '<span class="rest-info">Enter new S-OFF</span>';
+        }
+      }
 
       html += `<tr>
         <td class="mono" style="white-space:nowrap">${row.dateLabel}</td>
@@ -340,363 +429,4 @@
         <td><input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
         <td id="newDuty-${i}" class="mono">-</td>
         <td id="newD60-${i}" class="mono">-</td>
-        <td id="gross-${i}" class="mono">$0.00</td>
-        <td id="net-${i}" class="mono extra-net">$0.00</td>
-        <td><button class="export-btn" onclick="openExportDialog(${i})">🗓️ Export</button></td>
-      </tr>`;
-    });
-
-    html += `</tbody></table>`;
-    document.getElementById('tableContainer').innerHTML = html;
-  }
-
-  function calculateAdjustment(index, newValRaw){
-    const inputs = document.querySelectorAll('.adj-input');
-    const newVal = (newValRaw || "").replace(/\D/g,"").slice(0,4);
-    if (inputs[index] && inputs[index].value !== newVal) inputs[index].value = newVal;
-    if (newVal.length !== 4) return;
-
-    const row = state.rosterData[index];
-
-    const rateIn = parseFloat(document.getElementById('hourlyRate').value);
-    const hourlyRate = Number.isFinite(rateIn) ? rateIn : 353;
-
-    const taxRateIn = parseFloat(document.getElementById('taxRate').value);
-    const taxRate = Number.isFinite(taxRateIn) ? taxRateIn : 47;
-    const taxMult = 1 - (taxRate / 100);
-
-    const t1 = parseHHMM(row.origSOff);
-    const t2base = parseHHMM(newVal);
-    if (t1 === null || t2base === null) return;
-
-    let t2 = t2base;
-    if (t2 < t1) t2 += 1440;
-
-    const deltaMins = t2 - t1;
-    const finalDutyMins = row.origDuty + deltaMins;
-    const finalD60Mins = finalDutyMins * 0.6;
-
-    const creditSec = row.credit * 60;
-    const d60_0_sec = row.origDuty * 60 * 0.6;
-    const d60_1_sec = finalDutyMins * 60 * 0.6;
-
-    const paid0Sec = Math.max(creditSec, d60_0_sec);
-    const paid1Sec = Math.max(creditSec, d60_1_sec);
-
-    let diffSec = paid1Sec - paid0Sec;
-    if (diffSec < 0.000001) diffSec = 0;
-
-    const gross = (diffSec / 3600) * hourlyRate;
-    const net = gross * taxMult;
-
-    document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDutyMins);
-    document.getElementById(`newD60-${index}`).innerText = formatTime(finalD60Mins);
-
-    document.getElementById(`gross-${index}`).innerText = dollars(gross);
-    document.getElementById(`net-${index}`).innerText = dollars(net);
-
-    const mCell = document.getElementById(`marginCell-${index}`);
-    const spanClass = `mono ${getMarginClass(row.credit, finalD60Mins)}`;
-    mCell.innerHTML = `<span class="${spanClass}">${formatTime(Math.abs(row.credit - finalD60Mins))}</span>`;
-  }
-
-  function updateAllCalculations(){
-    const inputs = document.querySelectorAll('.adj-input');
-    inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
-  }
-
-  function yyyymmdd(dateObj){
-    const y = dateObj.getFullYear();
-    const m = pad2(dateObj.getMonth() + 1);
-    const d = pad2(dateObj.getDate());
-    return `${y}${m}${d}`;
-  }
-
-  // Google Calendar export
-  function exportDay(i){
-    const row = state.rosterData[i];
-
-    const year = parseInt(state.yearFull || "2026", 10);
-    const monthNum = monthMap[row.monKey].num;
-    const startDate = new Date(year, monthNum - 1, row.day);
-    const endDate = new Date(year, monthNum - 1, row.day + 1);
-
-    const newD60El = document.getElementById(`newD60-${i}`);
-    const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
-    const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
-
-    const marginMins = Math.abs(row.credit - d60Mins);
-    const marginText = formatTime(marginMins);
-
-    const trig = computeTriggerSignoff(row);
-    const triggerText = trig.already ? "Already" : trig.hhmm;
-
-    const ZERO_EPS_MIN = 0.5;
-    const flag = (marginMins <= ZERO_EPS_MIN) ? "🟠 [ZERO MARGIN] " : "";
-
-    const title = `${flag}DPC60 Margin ${marginText} | S-OFF Trigger for DPC60 ${triggerText} (Orig ${row.origSOff})`;
-    const dates = `${yyyymmdd(startDate)}/${yyyymmdd(endDate)}`;
-
-    const url =
-      `https://calendar.google.com/calendar/render?action=TEMPLATE` +
-      `&text=${encodeURIComponent(title)}` +
-      `&dates=${dates}`;
-
-    window.open(url, "_blank");
-  }
-
-  // Modal export chooser (single row)
-  let exportIndex = null;
-
-  function openExportDialog(i){
-    exportIndex = i;
-    const dlg = document.getElementById("exportDialog");
-    if (dlg && typeof dlg.showModal === "function") {
-      dlg.showModal();
-      return;
-    }
-    exportDay(i);
-  }
-
-  function closeExportDialog(){
-    const dlg = document.getElementById("exportDialog");
-    if (dlg && dlg.open) dlg.close();
-    exportIndex = null;
-  }
-
-  function exportChoice(which){
-    const i = exportIndex;
-    closeExportDialog();
-    if (i === null || i === undefined) return;
-
-    if (which === "google") exportDay(i);
-    if (which === "ics") exportDayICS(i);
-  }
-
-  // Export All dialog handlers
-  function openExportAllDialog(){
-    const dlg = document.getElementById("exportAllDialog");
-    if (dlg && typeof dlg.showModal === "function") {
-      dlg.showModal();
-      return;
-    }
-    // Fallback: export all to Google
-    state.rosterData.forEach((_, i) => exportDay(i));
-  }
-
-  function closeExportAllDialog(){
-    const dlg = document.getElementById("exportAllDialog");
-    if (dlg && dlg.open) dlg.close();
-  }
-
-  function exportAllChoice(which){
-    closeExportAllDialog();
-    
-    if (which === "google") {
-      state.rosterData.forEach((_, i) => exportDay(i));
-    } else if (which === "ics") {
-      exportAllToICS();
-    }
-  }
-
-  function exportDayICS(i){
-    const row = state.rosterData[i];
-
-    const year = parseInt(state.yearFull || "2026", 10);
-    const monthNum = monthMap[row.monKey].num;
-
-    const start = new Date(Date.UTC(year, monthNum - 1, row.day, 0, 0, 0));
-    const end   = new Date(Date.UTC(year, monthNum - 1, row.day + 1, 0, 0, 0));
-
-    const newD60El = document.getElementById(`newD60-${i}`);
-    const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
-    const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
-
-    const marginMins = Math.abs(row.credit - d60Mins);
-    const marginText = formatTime(marginMins);
-
-    const trig = computeTriggerSignoff(row);
-    const triggerText = trig.already ? "Already" : trig.hhmm;
-
-    const ZERO_EPS_MIN = 0.5;
-    const flag = (marginMins <= ZERO_EPS_MIN) ? "🟠 [ZERO MARGIN] " : "";
-
-    const title = `${flag}DPC60 Margin ${marginText} | Trigger ${triggerText} (Orig ${row.origSOff})`;
-
-    const pad2 = (n) => String(n).padStart(2, "0");
-    const ymd = (d) => `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}`;
-
-    const dtStamp = (() => {
-      const now = new Date();
-      return `${now.getUTCFullYear()}${pad2(now.getUTCMonth()+1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}${pad2(now.getUTCSeconds())}Z`;
-    })();
-
-    const uid = `dpc60-${year}-${monthNum}-${row.day}-${row.origSOff}@local`;
-
-    const ics =
-`BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//DPC60 Analyser//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-UID:${uid}
-DTSTAMP:${dtStamp}
-SUMMARY:${title.replace(/\n/g, " ")}
-DTSTART;VALUE=DATE:${ymd(start)}
-DTEND;VALUE=DATE:${ymd(end)}
-END:VEVENT
-END:VCALENDAR
-`;
-
-    const href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-    window.open(href, "_blank");
-  }
-
-  function exportAllToICS(){
-    const pad2 = (n) => String(n).padStart(2, "0");
-    const ymd = (d) => `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}`;
-
-    const dtStamp = (() => {
-      const now = new Date();
-      return `${now.getUTCFullYear()}${pad2(now.getUTCMonth()+1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}${pad2(now.getUTCSeconds())}Z`;
-    })();
-
-    let ics = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//DPC60 Analyser//EN
-CALSCALE:GREGORIAN
-`;
-
-    state.rosterData.forEach((row, i) => {
-      const year = parseInt(state.yearFull || "2026", 10);
-      const monthNum = monthMap[row.monKey].num;
-
-      const start = new Date(Date.UTC(year, monthNum - 1, row.day, 0, 0, 0));
-      const end   = new Date(Date.UTC(year, monthNum - 1, row.day + 1, 0, 0, 0));
-
-      const newD60El = document.getElementById(`newD60-${i}`);
-      const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
-      const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
-
-      const marginMins = Math.abs(row.credit - d60Mins);
-      const marginText = formatTime(marginMins);
-
-      const trig = computeTriggerSignoff(row);
-      const triggerText = trig.already ? "Already" : trig.hhmm;
-
-      const ZERO_EPS_MIN = 0.5;
-      const flag = (marginMins <= ZERO_EPS_MIN) ? "🟠 [ZERO MARGIN] " : "";
-
-      const title = `${flag}DPC60 Margin ${marginText} | Trigger ${triggerText} (Orig ${row.origSOff})`;
-      const uid = `dpc60-${year}-${monthNum}-${row.day}-${row.origSOff}@local`;
-
-      ics += `BEGIN:VEVENT
-UID:${uid}
-DTSTAMP:${dtStamp}
-SUMMARY:${title.replace(/\n/g, " ")}
-DTSTART;VALUE=DATE:${ymd(start)}
-DTEND;VALUE=DATE:${ymd(end)}
-END:VEVENT
-`;
-    });
-
-    ics += `END:VCALENDAR
-`;
-
-    const href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-    const a = document.createElement('a');
-    a.href = href;
-    a.download = `DPC60-Roster-${state.bidPeriod || 'Export'}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
-  function createPDF(){
-    if (!state.rosterData.length){
-      alert('Please process roster data first.');
-      return;
-    }
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape');
-
-    const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
-    const hourlyRate = document.getElementById('hourlyRate').value;
-    const taxRate = document.getElementById('taxRate').value;
-
-    doc.setFontSize(18);
-    doc.text('DPC60 Roster Analysis', 14, 15);
-    
-    doc.setFontSize(11);
-    doc.text(`${bpLabel} | Hourly Rate: $${hourlyRate} | Tax Rate: ${taxRate}%`, 14, 22);
-
-    const tableData = [];
-    
-    state.rosterData.forEach((row, i) => {
-      const margin = Math.abs(row.credit - row.origD60);
-      const trig = computeTriggerSignoff(row);
-      const triggerText = trig.already ? "Already" : trig.hhmm;
-
-      const newD60El = document.getElementById(`newD60-${i}`);
-      const newDutyEl = document.getElementById(`newDuty-${i}`);
-      const grossEl = document.getElementById(`gross-${i}`);
-      const netEl = document.getElementById(`net-${i}`);
-
-      const newDutyText = newDutyEl ? newDutyEl.innerText : "-";
-      const newD60Text = newD60El ? newD60El.innerText : "-";
-      const grossText = grossEl ? grossEl.innerText : "$0.00";
-      const netText = netEl ? netEl.innerText : "$0.00";
-
-      tableData.push([
-        row.dateLabel,
-        row.origSOff,
-        formatTime(row.origDuty),
-        formatTime(row.credit),
-        formatTime(row.origD60),
-        formatTime(margin),
-        triggerText,
-        newDutyText,
-        newD60Text,
-        grossText,
-        netText
-      ]);
-    });
-
-    doc.autoTable({
-      startY: 28,
-      head: [['Date', 'Orig S-Off', 'Duty', 'Credit', '.6 Duty', 'Margin', 'S-OFF Trigger', 'New Duty', 'New .6', 'Extra Gross', 'Net After Tax']],
-      body: tableData,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [29, 29, 31], textColor: 255 },
-      columnStyles: {
-        9: { textColor: [226, 27, 34], fontStyle: 'bold' },
-        10: { textColor: [22, 163, 74], fontStyle: 'bold' }
-      }
-    });
-
-    doc.save(`DPC60-Analysis-${bpLabel.replace(/\s+/g, '-')}.pdf`);
-  }
-
-  function exportToEmail(){
-    const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
-    const subject = `DPC60 Analysis - ${bpLabel}`;
-
-    let body = `DPC60 ANALYSIS - ${bpLabel}\n\n`;
-
-    state.rosterData.forEach(r => {
-      const trig = computeTriggerSignoff(r);
-      const triggerText = trig.already ? "Already" : trig.hhmm;
-
-      body += `${r.dateLabel}\n`;
-      body += `  Orig S-Off: ${r.origSOff}\n`;
-      body += `  S-OFF Trigger for DPC60: ${triggerText}\n`;
-      body += `  Margin (Credit vs .6): ${formatTime(Math.abs(r.credit - r.origD60))}\n\n`;
-    });
-
-    window.location.href =
-      `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }
-</script>
-</body>
-</html>
+        <td id="restPeriod-${i}">${restHTML}<
