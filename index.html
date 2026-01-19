@@ -266,6 +266,16 @@
     const MIN_REST_MINS = MIN_REST_HOURS * 60;
     const WARNING_THRESHOLD_MINS = 11 * 60;
     
+    // Check if there's more than 1 day gap between duties (indicates days off)
+    const currentDate = new Date(parseInt(state.yearFull), monthMap[currentRow.monKey].num - 1, currentRow.day);
+    const nextDate = new Date(parseInt(state.yearFull), monthMap[nextRow.monKey].num - 1, nextRow.day);
+    const daysDiff = Math.round((nextDate - currentDate) / (1000 * 60 * 60 * 24));
+    
+    // If more than 1 day apart, there are days off between duties
+    if (daysDiff > 1) {
+      return { isGap: true, daysDiff };
+    }
+    
     const signOffToUse = newSignOffTime || currentRow.origSOff;
     const signOffMins = parseHHMM(signOffToUse);
     if (signOffMins === null) return null;
@@ -291,7 +301,8 @@
       isOk,
       shortfall,
       shortfallHours,
-      minRequired: MIN_REST_HOURS
+      minRequired: MIN_REST_HOURS,
+      isGap: false
     };
   }
 
@@ -406,7 +417,9 @@
       if (nextRow) {
         const rest = calculateRestPeriod(row, nextRow, null);
         if (rest) {
-          if (rest.isCritical) {
+          if (rest.isGap) {
+            restHTML = `<span class="rest-info">Days off (${rest.daysDiff - 1}d)</span>`;
+          } else if (rest.isCritical) {
             restHTML = `<span class="rest-critical mono">⚠️ ${rest.restHours}hrs (${rest.shortfallHours}hr short)</span>`;
           } else if (rest.isWarning) {
             restHTML = `<span class="rest-warning mono">⚠️ ${rest.restHours}hrs</span>`;
@@ -495,7 +508,9 @@
     if (restCell && nextRow) {
       const rest = calculateRestPeriod(row, nextRow, newVal);
       if (rest) {
-        if (rest.isCritical) {
+        if (rest.isGap) {
+          restCell.innerHTML = `<span class="rest-info">Days off (${rest.daysDiff - 1}d)</span>`;
+        } else if (rest.isCritical) {
           restCell.innerHTML = `<span class="rest-critical mono">⚠️ ${rest.restHours}hrs (${rest.shortfallHours}hr short)</span>`;
         } else if (rest.isWarning) {
           restCell.innerHTML = `<span class="rest-warning mono">⚠️ ${rest.restHours}hrs</span>`;
