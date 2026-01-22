@@ -67,13 +67,8 @@
     .export-btn{background:#3a3a3c;font-size:11px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;border-radius:12px;}
     .notice{padding:12px;color:var(--text-secondary);background:#fff;border:1px solid #e5e5e7;border-radius:12px;margin-top:12px;line-height:1.35;}
 
-    .trigger-pill{
-      background: rgba(209,0,209,0.10);
+    .trigger-text{
       color: var(--magenta);
-      border: 1px solid rgba(209,0,209,0.35);
-      border-radius: 8px;
-      padding: 3px 8px;
-      display: inline-block;
       font-weight: 800;
     }
     .blocks-pill{
@@ -187,7 +182,7 @@
       </div>
       <div class="legend-item">
         <span class="legend-dot dot-magenta"></span>
-        <span><strong>Magenta:</strong> S-OFF trigger for DPC60.</span>
+        <span><strong>Magenta:</strong> On Blocks Trigger for DPC60.</span>
       </div>
     </div>
 
@@ -420,7 +415,7 @@
       
       const triggerHTML = trig.already
         ? `<span class="trigger-ok">Already</span>`
-        : `<span class="trigger-pill mono" id="trigger-${i}">${trig.hhmm}</span>`;
+        : `<span class="trigger-text mono" id="trigger-${i}">${trig.hhmm}</span>`;
 
       // Calculate On Blocks Trigger (Sign off trigger - 15 mins)
       let onBlocksHTML = '<span class="trigger-ok">Already</span>';
