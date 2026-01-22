@@ -836,12 +836,26 @@ END:VEVENT
 
     state.rosterData.forEach(r => {
       const trig = computeTriggerSignoff(r);
-      const triggerText = trig.already ? "Already" : trig.hhmm;
+      const marginMins = Math.abs(r.credit - r.origD60);
+      const ZERO_EPS_MIN = 0.5;
+      const isZeroMargin = marginMins <= ZERO_EPS_MIN;
+
+      // Calculate On Blocks Time
+      let onBlocksText = "Already";
+      if (!trig.already && trig.hhmm && trig.hhmm !== "-") {
+        const trigMins = parseHHMM(trig.hhmm);
+        if (trigMins !== null) {
+           onBlocksText = formatHHMM(trigMins - 15);
+        }
+      }
 
       body += `${r.dateLabel}\n`;
-      body += `  Orig S-Off: ${r.origSOff}\n`;
-      body += `  S-OFF Trigger for DPC60: ${triggerText}\n`;
-      body += `  Margin (Credit vs .6): ${formatTime(Math.abs(r.credit - r.origD60))}\n\n`;
+      if (isZeroMargin) {
+        body += `🟠 [ZERO MARGIN] On Blocks Trigger for DPC60 ${onBlocksText}\n`;
+      } else {
+        body += `DPC60 Margin ${formatTime(marginMins)} | On Blocks Trigger for DPC60 ${onBlocksText}\n`;
+      }
+      body += `Orig S-Off: ${r.origSOff}\n\n`;
     });
 
     window.location.href =
