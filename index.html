@@ -46,8 +46,8 @@
     td{padding:12px 10px;border-bottom:1px solid #f2f2f2;font-size:13px;vertical-align:middle;}
     
     /* Financial columns border */
-    th:nth-child(12), th:nth-child(13),
-    td:nth-child(12), td:nth-child(13) {
+    th:nth-child(13), th:nth-child(14),
+    td:nth-child(13), td:nth-child(14) {
       border-left: 3px solid var(--accent-red);
       background-color: rgba(226, 27, 34, 0.03);
     }
@@ -71,6 +71,15 @@
       background: rgba(209,0,209,0.10);
       color: var(--magenta);
       border: 1px solid rgba(209,0,209,0.35);
+      border-radius: 8px;
+      padding: 3px 8px;
+      display: inline-block;
+      font-weight: 800;
+    }
+    .blocks-pill{
+      background: rgba(209,0,209,0.18);
+      color: #9c009c;
+      border: 1px solid rgba(209,0,209,0.5);
       border-radius: 8px;
       padding: 3px 8px;
       display: inline-block;
@@ -271,7 +280,6 @@
     const nextDate = new Date(parseInt(state.yearFull), monthMap[nextRow.monKey].num - 1, nextRow.day);
     const daysDiff = Math.round((nextDate - currentDate) / (1000 * 60 * 60 * 24));
     
-    // If more than 1 day apart, there are days off between duties
     if (daysDiff > 1) {
       return { isGap: true, daysDiff };
     }
@@ -400,8 +408,9 @@
 
     let html = `<table><thead><tr>
       <th>Date</th><th>Orig S-Off</th><th>Duty</th><th>Credit</th><th>.6 Duty</th><th>Margin Between<br>Credit Hrs and DPC60</th>
-      <th>S-OFF Trigger for DPC60</th>
-      <th>New S-OFF Time?</th><th>New Duty</th><th>New .6</th><th>Rest Period<br>(to next duty)</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
+      <th>S-OFF Trigger<br>for DPC60</th>
+      <th>On Blocks Trigger<br>for DPC60</th>
+      <th>New S-OFF<br>Time?</th><th>New Duty</th><th>New .6</th><th>Rest Period<br>(to next duty)</th><th>Extra Gross</th><th>Net After Tax</th><th>Action</th>
     </tr></thead><tbody>`;
 
     state.rosterData.forEach((row, i) => {
@@ -412,6 +421,19 @@
       const triggerHTML = trig.already
         ? `<span class="trigger-ok">Already</span>`
         : `<span class="trigger-pill mono" id="trigger-${i}">${trig.hhmm}</span>`;
+
+      // Calculate On Blocks Trigger (Sign off trigger - 15 mins)
+      let onBlocksHTML = '<span class="trigger-ok">Already</span>';
+      if (!trig.already && trig.hhmm && trig.hhmm !== "-") {
+        const trigMins = parseHHMM(trig.hhmm);
+        if (trigMins !== null) {
+          // Subtract 15 mins
+          const blocksMins = trigMins - 15;
+          onBlocksHTML = `<span class="blocks-pill mono">${formatHHMM(blocksMins)}</span>`;
+        } else {
+          onBlocksHTML = "-";
+        }
+      }
 
       let restHTML = '<span class="rest-info">Last duty</span>';
       if (nextRow) {
@@ -439,6 +461,7 @@
         <td class="mono">${formatTime(row.origD60)}</td>
         <td id="marginCell-${i}"><span class="mono ${getMarginClass(row.credit, row.origD60)}">${formatTime(margin)}</span></td>
         <td>${triggerHTML}</td>
+        <td>${onBlocksHTML}</td>
 
         <td><input inputmode="numeric" type="text" maxlength="4" class="adj-input mono" placeholder="HHMM" oninput="calculateAdjustment(${i}, this.value)"></td>
         <td id="newDuty-${i}" class="mono">-</td>
@@ -755,6 +778,17 @@ END:VEVENT
       const trig = computeTriggerSignoff(row);
       const triggerText = trig.already ? "Already" : trig.hhmm;
 
+      // Calculate on-blocks for PDF
+      let onBlocksText = "Already";
+      if (!trig.already && trig.hhmm && trig.hhmm !== "-") {
+        const trigMins = parseHHMM(trig.hhmm);
+        if (trigMins !== null) {
+          onBlocksText = formatHHMM(trigMins - 15);
+        } else {
+          onBlocksText = "-";
+        }
+      }
+
       const newD60El = document.getElementById(`newD60-${i}`);
       const newDutyEl = document.getElementById(`newDuty-${i}`);
       const grossEl = document.getElementById(`gross-${i}`);
@@ -775,6 +809,7 @@ END:VEVENT
         formatTime(row.origD60),
         formatTime(margin),
         triggerText,
+        onBlocksText,
         newDutyText,
         newD60Text,
         restText,
@@ -785,13 +820,13 @@ END:VEVENT
 
     doc.autoTable({
       startY: 28,
-      head: [['Date', 'Orig S-Off', 'Duty', 'Credit', '.6 Duty', 'Margin', 'S-OFF Trigger', 'New Duty', 'New .6', 'Rest Period', 'Extra Gross', 'Net After Tax']],
+      head: [['Date', 'Orig S-Off', 'Duty', 'Credit', '.6 Duty', 'Margin', 'S-OFF Trigger', 'On Blocks Trigger', 'New Duty', 'New .6', 'Rest Period', 'Extra Gross', 'Net After Tax']],
       body: tableData,
       styles: { fontSize: 7, cellPadding: 1.5 },
       headStyles: { fillColor: [29, 29, 31], textColor: 255 },
       columnStyles: {
-        10: { textColor: [226, 27, 34], fontStyle: 'bold' },
-        11: { textColor: [22, 163, 74], fontStyle: 'bold' }
+        11: { textColor: [226, 27, 34], fontStyle: 'bold' },
+        12: { textColor: [22, 163, 74], fontStyle: 'bold' }
       }
     });
 
