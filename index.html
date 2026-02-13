@@ -577,4 +577,411 @@
     let t2 = t2base;
     if (t2 < t1) t2 += 1440;
 
-    const deltaMins = t2 - t1
+    const deltaMins = t2 - t1;
+    const finalDutyMins = row.origDuty + deltaMins;
+    const finalD60Mins = finalDutyMins * 0.6;
+
+    const creditSec = row.credit * 60;
+    const d60_0_sec = row.origDuty * 60 * 0.6;
+    const d60_1_sec = finalDutyMins * 60 * 0.6;
+
+    const paid0Sec = Math.max(creditSec, d60_0_sec);
+    const paid1Sec = Math.max(creditSec, d60_1_sec);
+
+    let diffSec = paid1Sec - paid0Sec;
+    if (diffSec < 0.000001) diffSec = 0;
+
+    const gross = (diffSec / 3600) * hourlyRate;
+    const net = gross * taxMult;
+
+    document.getElementById(`newDuty-${index}`).innerText = formatTime(finalDutyMins);
+    document.getElementById(`newD60-${index}`).innerText = formatTime(finalD60Mins);
+
+    document.getElementById(`gross-${index}`).innerText = dollars(gross);
+    document.getElementById(`net-${index}`).innerText = dollars(net);
+
+    const mCell = document.getElementById(`marginCell-${index}`);
+    const spanClass = `mono ${getMarginClass(row.credit, finalD60Mins)}`;
+    mCell.innerHTML = `<span class="${spanClass}">${formatTime(Math.abs(row.credit - finalD60Mins))}</span>`;
+    
+    const restCell = document.getElementById(`restPeriod-${index}`);
+    if (restCell && nextRow) {
+      const rest = calculateRestPeriod(row, nextRow, newVal);
+      if (rest) {
+        if (rest.isGap) {
+          restCell.innerHTML = `<span class="rest-info">Days off (${rest.daysDiff - 1}d)</span>`;
+        } else if (rest.isCritical) {
+          restCell.innerHTML = `<span class="rest-critical mono">⚠️ ${rest.restHours}hrs (${rest.shortfallHours}hr short)</span>`;
+        } else if (rest.isWarning) {
+          restCell.innerHTML = `<span class="rest-warning mono">⚠️ ${rest.restHours}hrs</span>`;
+        } else {
+          restCell.innerHTML = `<span class="rest-ok mono">${rest.restHours}hrs ✓</span>`;
+        }
+      }
+    }
+  }
+
+  function updateAllCalculations(){
+    const inputs = document.querySelectorAll('.adj-input');
+    inputs.forEach((el, i) => { if (el && el.value) calculateAdjustment(i, el.value); });
+  }
+
+  function yyyymmdd(dateObj){
+    const y = dateObj.getFullYear();
+    const m = pad2(dateObj.getMonth() + 1);
+    const d = pad2(dateObj.getDate());
+    return `${y}${m}${d}`;
+  }
+
+  function exportDay(i){
+    const row = state.rosterData[i];
+
+    const year = parseInt(state.yearFull || "2026", 10);
+    const monthNum = monthMap[row.monKey].num;
+    const startDate = new Date(year, monthNum - 1, row.day);
+    const endDate = new Date(year, monthNum - 1, row.day + 1);
+
+    const newD60El = document.getElementById(`newD60-${i}`);
+    const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
+    const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
+
+    const marginMins = Math.abs(row.credit - d60Mins);
+    const marginText = formatTime(marginMins);
+
+    const trig = computeTriggerSignoff(row);
+    const triggerText = trig.already ? "Already" : trig.hhmm;
+
+    const ZERO_EPS_MIN = 0.5;
+    const isZeroMargin = marginMins <= ZERO_EPS_MIN;
+
+    let onBlocksText = "Already";
+    if (!trig.already && trig.hhmm && trig.hhmm !== "-") {
+      const trigMins = parseHHMM(trig.hhmm);
+      if (trigMins !== null) {
+          onBlocksText = formatHHMM(trigMins - 15);
+      }
+    }
+
+    let title = "";
+    if (isZeroMargin) {
+      title = `🟠 [ZERO MARGIN] On Blocks Trigger for DPC60 ${onBlocksText}`;
+    } else {
+      title = `DPC60 Margin ${marginText} | On Blocks Trigger for DPC60 ${onBlocksText}`;
+    }
+    
+    const dates = `${yyyymmdd(startDate)}/${yyyymmdd(endDate)}`;
+
+    const url =
+      `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+      `&text=${encodeURIComponent(title)}` +
+      `&dates=${dates}`;
+
+    window.open(url, "_blank");
+  }
+
+  let exportIndex = null;
+
+  function openExportDialog(i){
+    exportIndex = i;
+    const dlg = document.getElementById("exportDialog");
+    if (dlg && typeof dlg.showModal === "function") {
+      dlg.showModal();
+      return;
+    }
+    exportDay(i);
+  }
+
+  function closeExportDialog(){
+    const dlg = document.getElementById("exportDialog");
+    if (dlg && dlg.open) dlg.close();
+    exportIndex = null;
+  }
+
+  function exportChoice(which){
+    const i = exportIndex;
+    closeExportDialog();
+    if (i === null || i === undefined) return;
+
+    if (which === "google") exportDay(i);
+    if (which === "ics") exportDayICS(i);
+  }
+
+  function openExportAllDialog(){
+    const dlg = document.getElementById("exportAllDialog");
+    if (dlg && typeof dlg.showModal === "function") {
+      dlg.showModal();
+      return;
+    }
+    state.rosterData.forEach((_, i) => exportDay(i));
+  }
+
+  function closeExportAllDialog(){
+    const dlg = document.getElementById("exportAllDialog");
+    if (dlg && dlg.open) dlg.close();
+  }
+
+  function exportAllChoice(which){
+    closeExportAllDialog();
+    
+    if (which === "google") {
+      state.rosterData.forEach((_, i) => exportDay(i));
+    } else if (which === "ics") {
+      exportAllToICS();
+    }
+  }
+
+  function exportDayICS(i){
+    const row = state.rosterData[i];
+
+    const year = parseInt(state.yearFull || "2026", 10);
+    const monthNum = monthMap[row.monKey].num;
+
+    const start = new Date(Date.UTC(year, monthNum - 1, row.day, 0, 0, 0));
+    const end   = new Date(Date.UTC(year, monthNum - 1, row.day + 1, 0, 0, 0));
+
+    const newD60El = document.getElementById(`newD60-${i}`);
+    const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
+    const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
+
+    const marginMins = Math.abs(row.credit - d60Mins);
+    const marginText = formatTime(marginMins);
+
+    const trig = computeTriggerSignoff(row);
+    const triggerText = trig.already ? "Already" : trig.hhmm;
+
+    const ZERO_EPS_MIN = 0.5;
+    const isZeroMargin = marginMins <= ZERO_EPS_MIN;
+
+    let onBlocksText = "Already";
+    if (!trig.already && trig.hhmm && trig.hhmm !== "-") {
+      const trigMins = parseHHMM(trig.hhmm);
+      if (trigMins !== null) {
+          onBlocksText = formatHHMM(trigMins - 15);
+      }
+    }
+
+    let title = "";
+    if (isZeroMargin) {
+      title = `🟠 [ZERO MARGIN] On Blocks Trigger for DPC60 ${onBlocksText}`;
+    } else {
+      title = `DPC60 Margin ${marginText} | On Blocks Trigger for DPC60 ${onBlocksText}`;
+    }
+
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const ymd = (d) => `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}`;
+
+    const dtStamp = (() => {
+      const now = new Date();
+      return `${now.getUTCFullYear()}${pad2(now.getUTCMonth()+1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}${pad2(now.getUTCSeconds())}Z`;
+    })();
+
+    const uid = `dpc60-${year}-${monthNum}-${row.day}-${row.origSOff}@local`;
+
+    const ics =
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DPC60 Analyser//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${dtStamp}
+SUMMARY:${title.replace(/\n/g, " ")}
+DTSTART;VALUE=DATE:${ymd(start)}
+DTEND;VALUE=DATE:${ymd(end)}
+END:VEVENT
+END:VCALENDAR
+`;
+
+    const href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+    window.open(href, "_blank");
+  }
+
+  function exportAllToICS(){
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const ymd = (d) => `${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}`;
+
+    const dtStamp = (() => {
+      const now = new Date();
+      return `${now.getUTCFullYear()}${pad2(now.getUTCMonth()+1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}${pad2(now.getUTCSeconds())}Z`;
+    })();
+
+    let ics = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//DPC60 Analyser//EN
+CALSCALE:GREGORIAN
+`;
+
+    state.rosterData.forEach((row, i) => {
+      const year = parseInt(state.yearFull || "2026", 10);
+      const monthNum = monthMap[row.monKey].num;
+
+      const start = new Date(Date.UTC(year, monthNum - 1, row.day, 0, 0, 0));
+      const end   = new Date(Date.UTC(year, monthNum - 1, row.day + 1, 0, 0, 0));
+
+      const newD60El = document.getElementById(`newD60-${i}`);
+      const newD60Text = newD60El ? (newD60El.innerText || "").trim() : "";
+      const d60Mins = (newD60Text && newD60Text !== "-") ? parseTimeHM(newD60Text) : row.origD60;
+
+      const marginMins = Math.abs(row.credit - d60Mins);
+      const marginText = formatTime(marginMins);
+
+      const trig = computeTriggerSignoff(row);
+      const triggerText = trig.already ? "Already" : trig.hhmm;
+
+      const ZERO_EPS_MIN = 0.5;
+      const isZeroMargin = marginMins <= ZERO_EPS_MIN;
+
+      let onBlocksText = "Already";
+      if (!trig.already && trig.hhmm && trig.hhmm !== "-") {
+        const trigMins = parseHHMM(trig.hhmm);
+        if (trigMins !== null) {
+            onBlocksText = formatHHMM(trigMins - 15);
+        }
+      }
+
+      let title = "";
+      if (isZeroMargin) {
+        title = `🟠 [ZERO MARGIN] On Blocks Trigger for DPC60 ${onBlocksText}`;
+      } else {
+        title = `DPC60 Margin ${marginText} | On Blocks Trigger for DPC60 ${onBlocksText}`;
+      }
+
+      const uid = `dpc60-${year}-${monthNum}-${row.day}-${row.origSOff}@local`;
+
+      ics += `BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${dtStamp}
+SUMMARY:${title.replace(/\n/g, " ")}
+DTSTART;VALUE=DATE:${ymd(start)}
+DTEND;VALUE=DATE:${ymd(end)}
+END:VEVENT
+`;
+    });
+
+    ics += `END:VCALENDAR
+`;
+
+    const href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = `DPC60-Roster-${state.bidPeriod || 'Export'}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function createPDF(){
+    if (!state.rosterData.length){
+      alert('Please process roster data first.');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+
+    const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
+    const hourlyRate = document.getElementById('hourlyRate').value;
+    const taxRate = document.getElementById('taxRate').value;
+
+    doc.setFontSize(18);
+    doc.text('DPC60 Roster Analysis', 14, 15);
+    
+    doc.setFontSize(11);
+    doc.text(`${bpLabel} | Hourly Rate: $${hourlyRate} | Tax Rate: ${taxRate}%`, 14, 22);
+
+    const tableData = [];
+    
+    state.rosterData.forEach((row, i) => {
+      const margin = Math.abs(row.credit - row.origD60);
+      const trig = computeTriggerSignoff(row);
+      const triggerText = trig.already ? "Already" : trig.hhmm;
+
+      let onBlocksText = "Already";
+      if (!trig.already && trig.hhmm && trig.hhmm !== "-") {
+        const trigMins = parseHHMM(trig.hhmm);
+        if (trigMins !== null) {
+          onBlocksText = formatHHMM(trigMins - 15);
+        } else {
+          onBlocksText = "-";
+        }
+      }
+
+      const newD60El = document.getElementById(`newD60-${i}`);
+      const newDutyEl = document.getElementById(`newDuty-${i}`);
+      const grossEl = document.getElementById(`gross-${i}`);
+      const netEl = document.getElementById(`net-${i}`);
+      const restEl = document.getElementById(`restPeriod-${i}`);
+
+      const newDutyText = newDutyEl ? newDutyEl.innerText : "-";
+      const newD60Text = newD60El ? newD60El.innerText : "-";
+      const grossText = grossEl ? grossEl.innerText : "$0.00";
+      const netText = netEl ? netEl.innerText : "$0.00";
+      const restText = restEl ? restEl.innerText.replace(/[⚠️✓]/g, '').trim() : "-";
+
+      tableData.push([
+        row.dateLabel,
+        row.origSOff,
+        formatTime(row.origDuty),
+        formatTime(row.credit),
+        formatTime(row.origD60),
+        formatTime(margin),
+        triggerText,
+        onBlocksText,
+        newDutyText,
+        newD60Text,
+        restText,
+        grossText,
+        netText
+      ]);
+    });
+
+    doc.autoTable({
+      startY: 28,
+      head: [['Date', 'Orig S-Off', 'Duty', 'Credit', '.6 Duty', 'Margin', 'S-OFF Trigger', 'On Blocks Trigger', 'New Duty', 'New .6', 'Rest Period', 'Extra Gross', 'Net After Tax']],
+      body: tableData,
+      styles: { fontSize: 7, cellPadding: 1.5 },
+      headStyles: { fillColor: [29, 29, 31], textColor: 255 },
+      columnStyles: {
+        11: { textColor: [226, 27, 34], fontStyle: 'bold' },
+        12: { textColor: [22, 163, 74], fontStyle: 'bold' }
+      }
+    });
+
+    doc.save(`DPC60-Analysis-${bpLabel.replace(/\s+/g, '-')}.pdf`);
+  }
+
+  function exportToEmail(){
+    const bpLabel = state.bidPeriod ? `Bid Period ${state.bidPeriod}` : "Bid Period";
+    const subject = `DPC60 Analysis - ${bpLabel}`;
+
+    let body = `DPC60 ANALYSIS - ${bpLabel}\n\n`;
+
+    state.rosterData.forEach(r => {
+      const trig = computeTriggerSignoff(r);
+      const marginMins = Math.abs(r.credit - r.origD60);
+      const ZERO_EPS_MIN = 0.5;
+      const isZeroMargin = marginMins <= ZERO_EPS_MIN;
+
+      let onBlocksText = "Already";
+      if (!trig.already && trig.hhmm && trig.hhmm !== "-") {
+        const trigMins = parseHHMM(trig.hhmm);
+        if (trigMins !== null) {
+           onBlocksText = formatHHMM(trigMins - 15);
+        }
+      }
+
+      body += `${r.dateLabel}\n`;
+      if (isZeroMargin) {
+        body += `🟠 [ZERO MARGIN] On Blocks Trigger for DPC60 ${onBlocksText}\n`;
+      } else {
+        body += `DPC60 Margin ${formatTime(marginMins)} | On Blocks Trigger for DPC60 ${onBlocksText}\n`;
+      }
+      body += `Orig S-Off: ${r.origSOff}\n\n`;
+    });
+
+    window.location.href =
+      `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+</script>
+</body>
+</html>
