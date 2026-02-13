@@ -164,8 +164,36 @@
       </div>
     </div>
 
-    <textarea id="rosterInput"
-      placeholder='In WebCis Select "Roster" then "Send My Roster". Send to your email then copy and paste the entire text in here.'></textarea>
+    <div style="margin-bottom: 16px;">
+      <div class="instructions-box" style="background: #fff; border: 2px solid var(--accent-red); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+        <h3 style="margin: 0 0 12px 0; font-size: 15px; color: var(--accent-red);">📋 How to Get Your Roster File</h3>
+        <ol style="margin: 0; padding-left: 20px; line-height: 1.6; font-size: 13px;">
+          <li>Log into <strong>WebCIS</strong></li>
+          <li>Navigate to <strong>"Roster"</strong> menu</li>
+          <li>Select <strong>"Send My Roster"</strong></li>
+          <li>Choose to send the roster to your <strong>email address</strong></li>
+          <li>Open the email and <strong>save the roster text as a .txt file</strong> (copy the text and save it in a text editor, or save the email as text)</li>
+          <li>Click the <strong>"Upload Roster File"</strong> button below and select your saved file</li>
+        </ol>
+        <p style="margin: 12px 0 0 0; padding: 10px; background: #fff8e1; border-left: 3px solid #ef6c00; font-size: 12px; border-radius: 6px;">
+          <strong>💡 Tip:</strong> The file must contain the complete roster text from WebCIS, including the pattern section with "Rpt/Rls/Duty/Cred" lines.
+        </p>
+      </div>
+      
+      <div style="display: flex; gap: 12px; align-items: center; justify-content: center; margin-bottom: 10px; flex-wrap: wrap;">
+        <button class="btn-secondary" onclick="document.getElementById('fileInput').click()" style="font-size: 14px; padding: 14px 24px;">
+          📁 Upload Roster File
+        </button>
+        <button onclick="toggleManualPaste()" style="background: #3a3a3c; font-size: 14px; padding: 14px 24px;">
+          ✏️ Toggle Manual Paste
+        </button>
+      </div>
+      
+      <input type="file" id="fileInput" accept=".txt,.text,text/plain" style="display: none;" onchange="handleFileUpload(event)">
+      
+      <textarea id="rosterInput" style="display: none;"
+        placeholder='Alternatively: In WebCIS select "Roster" → "Send My Roster". Copy the entire email text and paste it here.'></textarea>
+    </div>
 
     <div class="legend">
       <div class="legend-item">
@@ -262,6 +290,63 @@
     if (Math.abs(credit - d60) <= 0.5) return 'margin-green';
     return credit > d60 ? 'margin-amber' : 'margin-blue';
   };
+
+  function toggleManualPaste() {
+    const textarea = document.getElementById('rosterInput');
+    if (textarea.style.display === 'none') {
+      textarea.style.display = 'block';
+    } else {
+      textarea.style.display = 'none';
+    }
+  }
+
+  function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File is too large. Please select a file smaller than 5MB.');
+      return;
+    }
+    
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      const text = e.target.result;
+      document.getElementById('rosterInput').value = text;
+      
+      // Automatically process the roster after upload
+      processRoster();
+      
+      // Show success message
+      const notice = document.createElement('div');
+      notice.className = 'notice';
+      notice.style.background = '#e8f5e9';
+      notice.style.color = '#2e7d32';
+      notice.style.marginBottom = '12px';
+      notice.innerHTML = `✅ File "${file.name}" uploaded successfully and processed.`;
+      
+      const container = document.getElementById('tableContainer');
+      if (container.firstChild) {
+        container.insertBefore(notice, container.firstChild);
+      } else {
+        container.appendChild(notice);
+      }
+      
+      // Remove notice after 5 seconds
+      setTimeout(() => notice.remove(), 5000);
+    };
+    
+    reader.onerror = function() {
+      alert('Error reading file. Please try again.');
+    };
+    
+    reader.readAsText(file);
+    
+    // Reset file input so the same file can be uploaded again if needed
+    event.target.value = '';
+  }
 
   function calculateRestPeriod(currentRow, nextRow, newSignOffTime) {
     if (!nextRow || !nextRow.rptTime) return null;
@@ -397,7 +482,7 @@
   function renderTable(){
     if (!state.rosterData.length){
       document.getElementById('tableContainer').innerHTML =
-        `<div class="notice">No pattern "Rpt/Rls/Duty/Cred" lines detected. Paste the bottom pattern section.</div>`;
+        `<div class="notice">No pattern "Rpt/Rls/Duty/Cred" lines detected. Please upload or paste a valid roster file from WebCIS.</div>`;
       return;
     }
 
@@ -587,9 +672,6 @@
     } else {
       title = `DPC60 Margin ${marginText} | On Blocks Trigger for DPC60 ${onBlocksText}`;
     }
-    
-    // Original S-Off in title as well? (Optional - keeping consistent with prior email format, but title space is limited)
-    // Let's stick to the requested format exactly.
     
     const dates = `${yyyymmdd(startDate)}/${yyyymmdd(endDate)}`;
 
